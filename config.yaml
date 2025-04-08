@@ -1,0 +1,93 @@
+# Sample configuration file for multisensor calibration
+
+# Camera parameters
+cameras:
+  cam0:  # Front camera
+    intrinsics:
+      fx: 600.0
+      fy: 600.0
+      cx: 320.0
+      cy: 240.0
+      distortion: [0.0, 0.0, 0.0, 0.0, 0.0]  # k1, k2, p1, p2, k3
+  cam1:  # Right camera
+    intrinsics:
+      fx: 610.0
+      fy: 610.0
+      cx: 315.0
+      cy: 245.0
+      distortion: [0.0, 0.0, 0.0, 0.0, 0.0]
+  cam2:  # Rear camera
+    intrinsics:
+      fx: 590.0
+      fy: 590.0
+      cx: 325.0
+      cy: 235.0
+      distortion: [0.0, 0.0, 0.0, 0.0, 0.0]
+  cam3:  # Left camera
+    intrinsics:
+      fx: 605.0
+      fy: 605.0
+      cx: 320.0
+      cy: 240.0
+      distortion: [0.0, 0.0, 0.0, 0.0, 0.0]
+
+# Sensor extrinsics (relative to vehicle frame - rear axle center)
+sensors:
+  cam0:  # Front camera
+    extrinsics:
+      translation: [1.5, 0.0, 0.5]
+      rotation_matrix: [
+        [1.0, 0.0, 0.0],
+        [0.0, 1.0, 0.0],
+        [0.0, 0.0, 1.0]
+      ]
+  cam1:  # Right camera
+    extrinsics:
+      translation: [0.5, 1.0, 0.5]
+      rotation_matrix: [
+        [0.0, -1.0, 0.0],
+        [1.0, 0.0, 0.0],
+        [0.0, 0.0, 1.0]
+      ]
+  cam2:  # Rear camera
+    extrinsics:
+      translation: [-0.5, 0.0, 0.5]
+      rotation_matrix: [
+        [-1.0, 0.0, 0.0],
+        [0.0, -1.0, 0.0],
+        [0.0, 0.0, 1.0]
+      ]
+  cam3:  # Left camera
+    extrinsics:
+      translation: [0.5, -1.0, 0.5]
+      rotation_matrix: [
+        [0.0, 1.0, 0.0],
+        [-1.0, 0.0, 0.0],
+        [0.0, 0.0, 1.0]
+      ]
+  imu:  # IMU
+    extrinsics:
+      translation: [0.1, 0.0, 0.1]
+      rotation_matrix: [
+        [1.0, 0.0, 0.0],
+        [0.0, 1.0, 0.0],
+        [0.0, 0.0, 1.0]
+      ]
+
+# Vehicle parameters
+vehicle:
+  axle_length: 1.6  # meters
+  wheel_radius: 0.3  # meters
+
+# Optimization parameters
+optimization:
+  max_iterations: 100
+  convergence_delta: 1e-6
+  robust_kernel: "Huber"
+  robust_kernel_threshold: 1.0
+
+# Feature detection parameters
+features:
+  detector: "ORB"
+  max_features_per_image: 1000
+  matching_threshold: 0.8

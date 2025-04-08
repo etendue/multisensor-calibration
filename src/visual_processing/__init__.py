@@ -1,0 +1,1 @@
+# Visual processing package initialization

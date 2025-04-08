@@ -1,0 +1,7 @@
+numpy>=1.20.0
+scipy>=1.7.0
+pyyaml>=6.0
+opencv-python>=4.5.0
+matplotlib>=3.5.0
+# Uncomment when ready to use GTSAM
+# gtsam>=4.1.0
