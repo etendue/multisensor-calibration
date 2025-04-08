@@ -209,7 +209,7 @@ where p0 are feature points in img_prev, p1 are corresponding points in img_curr
 **Purpose**: Estimate initial 3D positions of landmarks observed in at least two views with known relative pose.
 
 ### Input
-Matched 2D feature points $p_1$, $p_2$ (in normalized image coordinates) and corresponding camera projection matrices $\mathbf{M}_1$, $\mathbf{M}_2$. $\mathbf{M} = \mathbf{K} \cdot [\mathbf{R}|\mathbf{t}]$. For calibration, $[\mathbf{R}|\mathbf{t}]$ is $\text{inv}(\mathbf{T}_{V \leftarrow C_i}) \cdot \text{inv}(\mathbf{T}_{W \leftarrow V_k})$.
+Matched 2D feature points $p_1$, $p_2$ (in normalized image coordinates) and corresponding camera projection matrices $\mathbf{M}_1$, $\mathbf{M}_2$. $\mathbf{M} = \mathbf{K} \cdot [\mathbf{R}|\mathbf{t}]$. For calibration, $[\mathbf{R}|\mathbf{t}]$ is $(\mathbf{T}_{V \leftarrow C_i})^{-1} \cdot (\mathbf{T}_{W \leftarrow V_k})^{-1}$.
 
 ### Method (DLT - Direct Linear Transform)
 - Each match provides 2 linear equations for the 3D point $P = [X, Y, Z, 1]$.
@@ -260,9 +260,9 @@ Penalizes difference between observed feature location $p_{obs} = [u, v]$ and pr
 
 - Camera i at time k. Pose $\mathbf{T}_{W \leftarrow V_k}$, Extrinsics $\mathbf{T}_{V \leftarrow C_i}$, Intrinsics $\mathbf{K}_i$.
 
-- Transform $P_j$ to camera frame $C_i$: $P_c = \mathbf{T}_{C_i \leftarrow V} \cdot \text{inv}(\mathbf{T}_{W \leftarrow V_k}) \cdot P_j$
+- Transform $P_j$ to camera frame $C_i$: $P_c = \mathbf{T}_{C_i \leftarrow V} \cdot (\mathbf{T}_{W \leftarrow V_k})^{-1} \cdot P_j$
 
-- Project to pixel coordinates (pinhole model): $p_{proj} = \text{project}(\mathbf{K}_i, P_c)$
+- Project to pixel coordinates (pinhole model): $p_{proj} = \pi(\mathbf{K}_i, P_c)$
   - $[u', v', w']^T = \mathbf{K}_i \cdot [\mathbf{I}|0] \cdot P_c$
   - $p_{proj} = [u'/w', v'/w']$ (Apply distortion model here if needed)
 
@@ -282,9 +282,9 @@ Penalizes discrepancy between relative motion predicted by IMU integration and r
 - Preintegrated Measurements ($\Delta \mathbf{R}_m$, $\Delta v_m$, $\Delta p_m$) calculated from IMU data and current bias estimates.
 
 - Predicted Relative Motion from poses:
-  - $\Delta \mathbf{R}_{pred} = \text{inv}(\mathbf{R}_k) \cdot \mathbf{R}_{k+1}$
-  - $\Delta v_{pred} = \text{inv}(\mathbf{R}_k) \cdot (v_{k+1} - v_k - g_W \cdot dt)$
-  - $\Delta p_{pred} = \text{inv}(\mathbf{R}_k) \cdot (p_{k+1} - p_k - v_k \cdot dt - 0.5 \cdot g_W \cdot dt^2)$
+  - $\Delta \mathbf{R}_{pred} = \mathbf{R}_k^{-1} \cdot \mathbf{R}_{k+1}$
+  - $\Delta v_{pred} = \mathbf{R}_k^{-1} \cdot (v_{k+1} - v_k - g_W \cdot dt)$
+  - $\Delta p_{pred} = \mathbf{R}_k^{-1} \cdot (p_{k+1} - p_k - v_k \cdot dt - 0.5 \cdot g_W \cdot dt^2)$
 
 - Error: $e_{imu} = [ \log(\Delta \mathbf{R}_m^T \cdot \Delta \mathbf{R}_{pred}), \Delta v_{pred} - \Delta v_m, \Delta p_{pred} - \Delta p_m ]$ (Simplified representation). Correct formulation involves bias correction terms.
 
@@ -299,7 +299,7 @@ Penalizes discrepancy between relative motion measured by wheel odometry and rel
 
 - Odometry Measurement $\Delta pose_{odom}$ (e.g., $[dx, dy, d\theta]$) between $k$ and $k+1$.
 
-- Predicted Relative Pose: $\Delta pose_{pred} = \text{logmap}( \text{inv}(\mathbf{T}_{W \leftarrow V_k}) \cdot \mathbf{T}_{W \leftarrow V_{k+1}} )$ (Convert SE(3) difference to a vector, e.g., $[dx, dy, dz, dr_x, dr_y, dr_z]$). Need to select relevant components (e.g., $dx, dy, d\theta$ for planar motion).
+- Predicted Relative Pose: $\Delta pose_{pred} = \log( (\mathbf{T}_{W \leftarrow V_k})^{-1} \cdot \mathbf{T}_{W \leftarrow V_{k+1}} )$ (Convert SE(3) difference to a vector, e.g., $[dx, dy, dz, dr_x, dr_y, dr_z]$). Need to select relevant components (e.g., $dx, dy, d\theta$ for planar motion).
 
 - Error: $e_{odom} = \Delta pose_{odom} - \Delta pose_{pred}$ (matching dimensions).
 
