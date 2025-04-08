@@ -112,10 +112,10 @@ def extract_results(optimized_values: Dict) -> Tuple[Dict[str, CameraIntrinsics]
 
 **Purpose**: Provide an initial estimate of vehicle trajectory $\mathbf{T}_{W \leftarrow V_k}$ (pose in World frame at time k) by fusing IMU and Wheel Odometry.
 
-### State Vector (x)
+### State Vector ($x$)
 Typically includes pose and IMU biases. Example:
  $$ x = [p_x, p_y, p_z, v_x, v_y, v_z, q_w, q_x, q_y, q_z, b_ax, b_ay, b_az, b_gx, b_gy, b_gz]$$
-Where $p$ is position, $v$ is velocity (both in World frame W), $q$ is the quaternion representing orientation $T_{W,V}$, and $b_a$, $b_g$ are accelerometer and gyroscope biases (in IMU frame I).
+Where $p$ is position, $v$ is velocity (both in World frame W), $q$ is the quaternion representing orientation $\mathbf{T}_{W \leftarrow V}$, and $b_a$, $b_g$ are accelerometer and gyroscope biases (in IMU frame I).
 
 ### Prediction Step (IMU Measurement)
 Propagate state from $k$ to $k+1$ using IMU measurements $\omega_m$, $a_m$ between $t_k$ and $t_{k+1}$ ($dt = t_{k+1} - t_k$).
@@ -124,7 +124,7 @@ Propagate state from $k$ to $k+1$ using IMU measurements $\omega_m$, $a_m$ betwe
 
 - Update Orientation (Quaternion integration): $q_{k+1} = q_k \cdot \delta_q(\omega \cdot dt)$ where $\delta_q$ converts rotation vector to quaternion.
 
-- Estimate true acceleration (compensate bias, gravity $g_W$, rotate to World frame): $a_W = R(q_k) \cdot (a_m - b_a) - g_W$ (where $R(q_k)$ is rotation matrix from $q_k$).
+- Estimate true acceleration (compensate bias, gravity $g_W$, rotate to World frame): $a_W = \mathbf{R}(q_k) \cdot (a_m - b_a) - g_W$ (where $\mathbf{R}(q_k)$ is rotation matrix from $q_k$).
 
 - Update Velocity: $v_{k+1} = v_k + a_W \cdot dt$
 
@@ -134,7 +134,7 @@ Propagate state from $k$ to $k+1$ using IMU measurements $\omega_m$, $a_m$ betwe
 
 - State Transition: $x_{k+1|k} = f(x_{k|k}, u_k)$ where $u_k$ is the IMU input.
 
-- Covariance Prediction: $P_{k+1|k} = F_k \cdot P_{k|k} \cdot F_k^T + Q_k$ where $F_k$ is the Jacobian of $f$ w.r.t $x$, and $Q_k$ is the process noise covariance derived from IMU noise parameters.
+- Covariance Prediction: $\mathbf{P}_{k+1|k} = \mathbf{F}_k \cdot \mathbf{P}_{k|k} \cdot \mathbf{F}_k^T + \mathbf{Q}_k$ where $\mathbf{F}_k$ is the Jacobian of $f$ w.r.t $x$, and $\mathbf{Q}_k$ is the process noise covariance derived from IMU noise parameters.
 
 ### Update Step (Wheel Odometry Measurement)
 Correct the predicted state using wheel odometry measurement $z_k$.
@@ -146,13 +146,13 @@ Correct the predicted state using wheel odometry measurement $z_k$.
 
 - Measurement Prediction: $\hat{z} = h(x_{k+1|k})$. Predict expected $v$ and $\omega_z$ from the EKF state (e.g., $v$ from $v_x$, $v_y$, $\omega_z$ from quaternion derivative or gyro bias).
 
-- Measurement Jacobian: $H_k = \frac{\partial h}{\partial x}$ evaluated at $x_{k+1|k}$.
+- Measurement Jacobian: $\mathbf{H}_k = \frac{\partial h}{\partial x}$ evaluated at $x_{k+1|k}$.
 
-- Kalman Gain: $K_k = P_{k+1|k} \cdot H_k^T \cdot (H_k \cdot P_{k+1|k} \cdot H_k^T + R_k)^{-1}$ where $R_k$ is the measurement noise covariance.
+- Kalman Gain: $\mathbf{K}_k = \mathbf{P}_{k+1|k} \cdot \mathbf{H}_k^T \cdot (\mathbf{H}_k \cdot \mathbf{P}_{k+1|k} \cdot \mathbf{H}_k^T + \mathbf{R}_k)^{-1}$ where $\mathbf{R}_k$ is the measurement noise covariance.
 
-- State Update: $x_{k+1|k+1} = x_{k+1|k} + K_k \cdot (z_k - \hat{z})$
+- State Update: $x_{k+1|k+1} = x_{k+1|k} + \mathbf{K}_k \cdot (z_k - \hat{z})$
 
-- Covariance Update: $P_{k+1|k+1} = (I - K_k \cdot H_k) \cdot P_{k+1|k}$
+- Covariance Update: $\mathbf{P}_{k+1|k+1} = (\mathbf{I} - \mathbf{K}_k \cdot \mathbf{H}_k) \cdot \mathbf{P}_{k+1|k}$
 
 ### Code Skeleton
 
@@ -209,18 +209,18 @@ where p0 are feature points in img_prev, p1 are corresponding points in img_curr
 **Purpose**: Estimate initial 3D positions of landmarks observed in at least two views with known relative pose.
 
 ### Input
-Matched 2D feature points p1, p2 (in normalized image coordinates) and corresponding camera projection matrices M1, M2. M = K * [R|t]. For calibration, [R|t] is inv(T_V_Ci) * inv(T_W_Vk).
+Matched 2D feature points $p_1$, $p_2$ (in normalized image coordinates) and corresponding camera projection matrices $\mathbf{M}_1$, $\mathbf{M}_2$. $\mathbf{M} = \mathbf{K} \cdot [\mathbf{R}|\mathbf{t}]$. For calibration, $[\mathbf{R}|\mathbf{t}]$ is $\text{inv}(\mathbf{T}_{V \leftarrow C_i}) \cdot \text{inv}(\mathbf{T}_{W \leftarrow V_k})$.
 
 ### Method (DLT - Direct Linear Transform)
-- Each match provides 2 linear equations for the 3D point P = [X, Y, Z, 1].
-- p = [u, v, 1]. Projection equation: p_proj = M * P.
-- Since p and p_proj are parallel: p x (M * P) = 0.
+- Each match provides 2 linear equations for the 3D point $P = [X, Y, Z, 1]$.
+- $p = [u, v, 1]$. Projection equation: $p_{proj} = \mathbf{M} \cdot P$.
+- Since $p$ and $p_{proj}$ are parallel: $p \times (\mathbf{M} \cdot P) = 0$.
 - This gives equations like:
-  - (u * m3 - m1) * P = 0
-  - (v * m3 - m2) * P = 0
-  - (where m1, m2, m3 are rows of M).
-- Stack equations from both views (M1, p1 and M2, p2) into A * P = 0.
-- Solve for P using Singular Value Decomposition (SVD) of A. P is the last column of V where A = U * S * V^T.
+  - $(u \cdot \mathbf{m}_3 - \mathbf{m}_1) \cdot P = 0$
+  - $(v \cdot \mathbf{m}_3 - \mathbf{m}_2) \cdot P = 0$
+  - (where $\mathbf{m}_1$, $\mathbf{m}_2$, $\mathbf{m}_3$ are rows of $\mathbf{M}$).
+- Stack equations from both views ($\mathbf{M}_1$, $p_1$ and $\mathbf{M}_2$, $p_2$) into $\mathbf{A} \cdot P = 0$.
+- Solve for $P$ using Singular Value Decomposition (SVD) of $\mathbf{A}$. $P$ is the last column of $\mathbf{V}$ where $\mathbf{A} = \mathbf{U} \cdot \mathbf{S} \cdot \mathbf{V}^T$.
 
 ### Code Skeleton
 
@@ -231,7 +231,7 @@ def triangulate_point(kp1_norm: np.ndarray, kp2_norm: np.ndarray, M1: np.ndarray
     Args:
         kp1_norm: Normalized coordinates [x, y] in view 1.
         kp2_norm: Normalized coordinates [x, y] in view 2.
-        M1: 3x4 Projection matrix for view 1 (K * [R|t]).
+        M1: 3x4 Projection matrix for view 1 ($\mathbf{K} \cdot [\mathbf{R}|\mathbf{t}]$).
         M2: 3x4 Projection matrix for view 2.
 
     Returns:
@@ -258,19 +258,19 @@ def triangulate_point(kp1_norm: np.ndarray, kp2_norm: np.ndarray, M1: np.ndarray
 ### Reprojection Factor
 Penalizes difference between observed feature location $p_{obs} = [u, v]$ and projected landmark position $P_j$ (in World frame W).
 
-- Camera i at time k. Pose $T_{W,V_k}$, Extrinsics $T_{V,C_i}$, Intrinsics $K_i$.
+- Camera i at time k. Pose $\mathbf{T}_{W \leftarrow V_k}$, Extrinsics $\mathbf{T}_{V \leftarrow C_i}$, Intrinsics $\mathbf{K}_i$.
 
-- Transform $P_j$ to camera frame $C_i$: $P_c = T_{C_i,V} \cdot \text{inv}(T_{W,V_k}) \cdot P_j$
+- Transform $P_j$ to camera frame $C_i$: $P_c = \mathbf{T}_{C_i \leftarrow V} \cdot \text{inv}(\mathbf{T}_{W \leftarrow V_k}) \cdot P_j$
 
-- Project to pixel coordinates (pinhole model): $p_{proj} = \text{project}(K_i, P_c)$
-  - $[u', v', w']^T = K_i \cdot [I|0] \cdot P_c$
+- Project to pixel coordinates (pinhole model): $p_{proj} = \text{project}(\mathbf{K}_i, P_c)$
+  - $[u', v', w']^T = \mathbf{K}_i \cdot [\mathbf{I}|0] \cdot P_c$
   - $p_{proj} = [u'/w', v'/w']$ (Apply distortion model here if needed)
 
 - Error: $e_{reproj} = p_{obs} - p_{proj}$
 
-- Cost: $\|e_{reproj}\|^2_{\Sigma}$ (where $\Sigma$ is covariance of feature measurement).
+- Cost: $\|e_{reproj}\|^2_{\mathbf{\Sigma}}$ (where $\mathbf{\Sigma}$ is covariance of feature measurement).
 
-- GTSAM: `gtsam.GenericProjectionFactorCal3_S2` (or similar based on intrinsic model) connecting Pose3(T_W_Vk), Point3(P_j), Pose3(T_V_Ci), Cal3_S2(K_i).
+- GTSAM: `gtsam.GenericProjectionFactorCal3_S2` (or similar based on intrinsic model) connecting Pose3($\mathbf{T}_{W \leftarrow V_k}$), Point3($P_j$), Pose3($\mathbf{T}_{V \leftarrow C_i}$), Cal3_S2($\mathbf{K}_i$).
 
 ### IMU Factor (Preintegration)
 Penalizes discrepancy between relative motion predicted by IMU integration and relative motion from optimized poses.
@@ -279,16 +279,16 @@ Penalizes discrepancy between relative motion predicted by IMU integration and r
 
 - IMU Measurements between $k$ and $k+1$.
 
-- Preintegrated Measurements ($\Delta R_m$, $\Delta v_m$, $\Delta p_m$) calculated from IMU data and current bias estimates.
+- Preintegrated Measurements ($\Delta \mathbf{R}_m$, $\Delta v_m$, $\Delta p_m$) calculated from IMU data and current bias estimates.
 
 - Predicted Relative Motion from poses:
-  - $\Delta R_{pred} = \text{inv}(R_k) \cdot R_{k+1}$
-  - $\Delta v_{pred} = \text{inv}(R_k) \cdot (v_{k+1} - v_k - g_W \cdot dt)$
-  - $\Delta p_{pred} = \text{inv}(R_k) \cdot (p_{k+1} - p_k - v_k \cdot dt - 0.5 \cdot g_W \cdot dt^2)$
+  - $\Delta \mathbf{R}_{pred} = \text{inv}(\mathbf{R}_k) \cdot \mathbf{R}_{k+1}$
+  - $\Delta v_{pred} = \text{inv}(\mathbf{R}_k) \cdot (v_{k+1} - v_k - g_W \cdot dt)$
+  - $\Delta p_{pred} = \text{inv}(\mathbf{R}_k) \cdot (p_{k+1} - p_k - v_k \cdot dt - 0.5 \cdot g_W \cdot dt^2)$
 
-- Error: $e_{imu} = [ \log(\Delta R_m^T \cdot \Delta R_{pred}), \Delta v_{pred} - \Delta v_m, \Delta p_{pred} - \Delta p_m ]$ (Simplified representation). Correct formulation involves bias correction terms.
+- Error: $e_{imu} = [ \log(\Delta \mathbf{R}_m^T \cdot \Delta \mathbf{R}_{pred}), \Delta v_{pred} - \Delta v_m, \Delta p_{pred} - \Delta p_m ]$ (Simplified representation). Correct formulation involves bias correction terms.
 
-- Cost: $\|e_{imu}\|^2_{\Sigma}$ (where $\Sigma$ is covariance from IMU preintegration).
+- Cost: $\|e_{imu}\|^2_{\mathbf{\Sigma}}$ (where $\mathbf{\Sigma}$ is covariance from IMU preintegration).
 
 - GTSAM: `gtsam.ImuFactor` or `gtsam.CombinedImuFactor` connecting poses, velocities, and biases.
 
@@ -299,11 +299,11 @@ Penalizes discrepancy between relative motion measured by wheel odometry and rel
 
 - Odometry Measurement $\Delta pose_{odom}$ (e.g., $[dx, dy, d\theta]$) between $k$ and $k+1$.
 
-- Predicted Relative Pose: $\Delta pose_{pred} = \text{logmap}( \text{inv}(T_{W,V_k}) \cdot T_{W,V_{k+1}} )$ (Convert SE(3) difference to a vector, e.g., $[dx, dy, dz, dr_x, dr_y, dr_z]$). Need to select relevant components (e.g., $dx, dy, d\theta$ for planar motion).
+- Predicted Relative Pose: $\Delta pose_{pred} = \text{logmap}( \text{inv}(\mathbf{T}_{W \leftarrow V_k}) \cdot \mathbf{T}_{W \leftarrow V_{k+1}} )$ (Convert SE(3) difference to a vector, e.g., $[dx, dy, dz, dr_x, dr_y, dr_z]$). Need to select relevant components (e.g., $dx, dy, d\theta$ for planar motion).
 
 - Error: $e_{odom} = \Delta pose_{odom} - \Delta pose_{pred}$ (matching dimensions).
 
-- Cost: $\|e_{odom}\|^2_{\Sigma}$ (where $\Sigma$ is covariance of odometry measurement).
+- Cost: $\|e_{odom}\|^2_{\mathbf{\Sigma}}$ (where $\mathbf{\Sigma}$ is covariance of odometry measurement).
 
 - GTSAM: Requires a custom factor derived from `gtsam.NoiseModelFactor`.
 
@@ -314,6 +314,6 @@ Encodes prior knowledge about a variable.
 
 - Error: $e_{prior} = \text{variable} - \text{prior\_mean}$ (or SE(3) logmap difference for poses).
 
-- Cost: $\|e_{prior}\|^2_{\Sigma}$ (where $\Sigma$ reflects confidence in the prior).
+- Cost: $\|e_{prior}\|^2_{\mathbf{\Sigma}}$ (where $\mathbf{\Sigma}$ reflects confidence in the prior).
 
 - GTSAM: `gtsam.PriorFactorPose3`, `gtsam.PriorFactorPoint3`, etc.
