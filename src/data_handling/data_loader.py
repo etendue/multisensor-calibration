@@ -32,47 +32,69 @@ try:
     import av
     PYAV_AVAILABLE = True
 
-    def decode_h264(data):
+    def decode_h264(data, debug=False):
         """Decode H.264 video data using PyAV.
 
         This function is based on a working implementation that successfully decodes
-        H.264 data from the specific rosbag format.
+        H.264 data from the specific rosbag format. It handles different frame types
+        (I-frames, P-frames, B-frames) and is resilient to frames that can't be decoded.
 
         Args:
             data: The raw H.264 encoded data
+            debug: Whether to print detailed debug information
 
         Returns:
             A numpy array containing the decoded image, or None if decoding fails
         """
         try:
+            if debug:
+                print(f"Data length: {len(data)} bytes")
+                if len(data) > 20:
+                    print(f"First 20 bytes: {[hex(b) for b in data[:20]]}")
+
             # Create a codec context for H.264 decoding
             codec_ctx = av.codec.CodecContext.create('h264', 'r')
 
             # Create a packet directly from the data
             packet = av.packet.Packet(data)
 
-            # Decode the packet
-            frames = list(codec_ctx.decode(packet))
+            try:
+                # Decode the packet - this might fail for non-I-frames
+                frames = list(codec_ctx.decode(packet))
 
-            # If we have frames, convert the first one to a numpy array
-            if frames:
-                # Get the first frame
-                frame = frames[0]
+                # If we have frames, convert the first one to a numpy array
+                if frames:
+                    # Get the first frame
+                    frame = frames[0]
 
-                # Convert to numpy array
-                return frame.to_ndarray(format='bgr24')
+                    if debug:
+                        print(f"Successfully decoded frame")
 
+                    # Convert to numpy array
+                    return frame.to_ndarray(format='bgr24')
+                elif debug:
+                    print("No frames decoded from the packet (might be a P/B-frame without previous I-frame)")
+            except Exception as decode_error:
+                if debug:
+                    print(f"Error decoding packet: {decode_error} (might be a P/B-frame without previous I-frame)")
+
+            # If we reach here, we couldn't decode the frame
             return None
         except Exception as e:
             print(f"Error in decode_h264: {e}")
+            if debug:
+                import traceback
+                traceback.print_exc()
             return None
 
 except ImportError:
     print("Warning: PyAV not found. H.264 video decoding will not be available.")
     PYAV_AVAILABLE = False
 
-    def decode_h264(data):
+    def decode_h264(data, debug=False):
         """Fallback function when PyAV is not available."""
+        if debug:
+            print("PyAV is not available for H.264 decoding")
         return None
 
 def read_rosbag(data_path: str) -> Tuple[List[ImageData], List[ImuData], List[WheelEncoderData]]:
@@ -221,19 +243,25 @@ def read_rosbag(data_path: str) -> Tuple[List[ImageData], List[ImuData], List[Wh
                                 print(f"Data length: {len(data_field)} bytes")
 
                             # Try to decode H.264 video using our specialized function
-                            decoded_image = decode_h264(data_field)
+                            # Enable debug mode for the first few frames
+                            debug_mode = len(images) < 3  # Only debug the first 3 frames
+                            decoded_image = decode_h264(data_field, debug=debug_mode)
 
                             if decoded_image is not None:
                                 # Successfully decoded the image
                                 image = decoded_image
 
                                 # For debugging, save the first frame as JPEG
-                                if len(images) == 0 and CV2_AVAILABLE:
+                                if len(images) < 3 and CV2_AVAILABLE:
                                     debug_path = f"debug_frame_{len(images)}.jpg"
                                     print(f"Saving debug frame to {debug_path}")
                                     _, jpeg_data = cv2.imencode('.jpg', image)
                                     with open(debug_path, 'wb') as f:
                                         f.write(jpeg_data)
+
+                                # Print success message for the first few frames
+                                if len(images) < 10:
+                                    print(f"Successfully decoded frame {len(images)}")
                             else:
                                 # Decoding failed, try with OpenCV as fallback
                                 if CV2_AVAILABLE:
@@ -241,11 +269,23 @@ def read_rosbag(data_path: str) -> Tuple[List[ImageData], List[ImuData], List[Wh
                                     np_arr = np.frombuffer(data_field, np.uint8)
                                     image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
                                     if image is None:
-                                        # Fallback to placeholder
-                                        image = np.zeros((480, 640, 3), dtype=np.uint8)
+                                        # Fallback to placeholder - use a small image to save memory
+                                        image = np.zeros((120, 160, 3), dtype=np.uint8)
+
+                                        # Skip this frame if we're just collecting placeholders
+                                        # This helps us get to I-frames faster
+                                        if len(images) > 0 and len(images) % 10 != 0:
+                                            # Skip this frame (only keep 1 in 10 placeholders)
+                                            continue
                                 else:
-                                    # Fallback to placeholder
-                                    image = np.zeros((480, 640, 3), dtype=np.uint8)
+                                    # Fallback to placeholder - use a small image to save memory
+                                    image = np.zeros((120, 160, 3), dtype=np.uint8)
+
+                                    # Skip this frame if we're just collecting placeholders
+                                    # This helps us get to I-frames faster
+                                    if len(images) > 0 and len(images) % 10 != 0:
+                                        # Skip this frame (only keep 1 in 10 placeholders)
+                                        continue
                         except Exception as e:
                             print(f"Error processing CompressedVideo: {e}")
                             # Print message structure for debugging
