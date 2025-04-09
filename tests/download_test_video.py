@@ -45,7 +45,7 @@ def main():
         sys.exit(1)
 
     print(f"\nYou can now test the SfM initialization with:")
-    print(f"./test_sfm.py --video {output_path}")
+    print(f"python -m tests.test_sfm --input {output_path}")
 
 if __name__ == "__main__":
     main()

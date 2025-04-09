@@ -10,11 +10,11 @@ import glob
 from datetime import datetime
 
 # Add the src directory to the Python path
-sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'src'))
+sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), '..'))
 
 # Import modules
-from data_structures import ImageData, VehiclePose, CameraIntrinsics, Extrinsics
-from visual_processing.sfm_initializer import perform_visual_initialization
+from src.data_structures import ImageData, VehiclePose, CameraIntrinsics, Extrinsics
+from src.visual_processing.sfm_initializer import perform_visual_initialization
 
 def parse_arguments():
     """Parse command line arguments."""

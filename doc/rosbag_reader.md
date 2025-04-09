@@ -41,7 +41,7 @@ The rosbag reader is integrated into the `load_and_synchronize_data` function in
 Example usage:
 
 ```python
-from data_handling.data_loader import load_and_synchronize_data
+from src.data_handling.data_loader import load_and_synchronize_data
 
 # Load data from a ROS1 bag
 images, imu_data, wheel_data = load_and_synchronize_data('/path/to/your/bagfile.bag')
@@ -53,7 +53,7 @@ images, imu_data, wheel_data = load_and_synchronize_data('/path/to/your/ros2_bag
 A test script is also provided to verify the functionality:
 
 ```bash
-python test_rosbag_reader.py --input /path/to/your/bagfile.bag
+python -m tests.test_rosbag_reader --input /path/to/your/bagfile.bag
 ```
 
 ## Limitations and Future Improvements
