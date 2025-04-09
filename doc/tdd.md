@@ -108,14 +108,14 @@ Use Python classes (as defined in the code skeleton) for ImageData, ImuData, Whe
 
 ### Coordinate Frames
 
-- **Vehicle Frame (V)**: Origin at rear axle center, X-fwd, Y-left, Z-up. All extrinsics are defined relative to this frame.
-- **IMU Frame (I)**: Sensor's native frame. T_V_I is the IMU extrinsic to estimate.
-- **Camera Frame (C)**: Sensor's native optical frame (Z-fwd, X-right, Y-down). T_V_Ci is the extrinsic for camera i.
-- **World Frame (W)**: Inertial frame, often aligned with the first vehicle pose. Vehicle poses T_W_Vk are estimated during optimization.
+- **Vehicle Frame (V)**: Origin at rear axle center, $X_{fwd}, Y_{left}, Z_{up}$. All extrinsics are defined relative to this frame.
+- **IMU Frame (I)**: Sensor's native frame. $\mathbf{T}_{V \leftarrow I}$ is the IMU extrinsic to estimate.
+- **Camera Frame (C)**: Sensor's native optical frame ($Z_{fwd}, X_{right}, Y_{down}$). $\mathbf{T}_{V \leftarrow C_i}$ is the extrinsic for camera i.
+- **World Frame (W)**: Inertial frame, often aligned with the first vehicle pose. Vehicle poses $\mathbf{T}_{W \leftarrow V_k}$ are estimated during optimization.
 
 ## 5. Key Data Structures (Python Classes)
 
-(Refer to classes defined in the initial Python code skeleton: TimestampedData, ImageData, ImuData, WheelEncoderData, CameraIntrinsics, Extrinsics, Feature, Match, Landmark, VehiclePose). Ensure consistent use of NumPy for vector/matrix operations. Use SciPy rotation utilities (scipy.spatial.transform.Rotation) for handling rotations (quaternions, matrices).
+(Refer to classes defined in the initial Python code skeleton: **TimestampedData, ImageData, ImuData, WheelEncoderData, CameraIntrinsics, Extrinsics, Feature, Match, Landmark, VehiclePose**). Ensure consistent use of NumPy for vector/matrix operations. Use SciPy rotation utilities (scipy.spatial.transform.Rotation) for handling rotations (quaternions, matrices).
 
 ## 6. API/Interfaces
 
