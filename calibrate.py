@@ -54,9 +54,14 @@ def main():
         imu, wheels, rear_axle_center_pose, vehicle_params.get('axle_length', 1.6)
     )
 
+    # Create output directory for SfM results
+    sfm_output_dir = os.path.join(args.output_dir, "sfm")
+    os.makedirs(sfm_output_dir, exist_ok=True)
+
     # 3. Visual Initialization (SfM)
     landmarks, features, current_intrinsics = perform_visual_initialization(
-        images, initial_trajectory, initial_intrinsics_guess, initial_extrinsics_guess
+        images, initial_trajectory, initial_intrinsics_guess, initial_extrinsics_guess,
+        output_dir=sfm_output_dir
     )
 
     # 4. Build Factor Graph

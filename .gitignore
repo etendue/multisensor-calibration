@@ -172,3 +172,16 @@ cython_debug/
 
 # PyPI configuration file
 .pypirc
+
+# Project specific
+# Test results and data
+results/
+data/
+*.jpg
+*.png
+*.mp4
+*.npy
+
+# IDE specific
+.vscode/
+.idea/
