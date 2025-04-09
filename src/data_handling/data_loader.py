@@ -31,9 +31,49 @@ except ImportError:
 try:
     import av
     PYAV_AVAILABLE = True
+
+    def decode_h264(data):
+        """Decode H.264 video data using PyAV.
+
+        This function is based on a working implementation that successfully decodes
+        H.264 data from the specific rosbag format.
+
+        Args:
+            data: The raw H.264 encoded data
+
+        Returns:
+            A numpy array containing the decoded image, or None if decoding fails
+        """
+        try:
+            # Create a codec context for H.264 decoding
+            codec_ctx = av.codec.CodecContext.create('h264', 'r')
+
+            # Create a packet directly from the data
+            packet = av.packet.Packet(data)
+
+            # Decode the packet
+            frames = list(codec_ctx.decode(packet))
+
+            # If we have frames, convert the first one to a numpy array
+            if frames:
+                # Get the first frame
+                frame = frames[0]
+
+                # Convert to numpy array
+                return frame.to_ndarray(format='bgr24')
+
+            return None
+        except Exception as e:
+            print(f"Error in decode_h264: {e}")
+            return None
+
 except ImportError:
     print("Warning: PyAV not found. H.264 video decoding will not be available.")
     PYAV_AVAILABLE = False
+
+    def decode_h264(data):
+        """Fallback function when PyAV is not available."""
+        return None
 
 def read_rosbag(data_path: str) -> Tuple[List[ImageData], List[ImuData], List[WheelEncoderData]]:
     """
@@ -175,56 +215,37 @@ def read_rosbag(data_path: str) -> Tuple[List[ImageData], List[ImuData], List[Wh
                             if len(images) == 0:
                                 print(f"CompressedVideo message attributes: {dir(msg)}")
 
-                            # Try to decode H.264 video using PyAV
-                            if PYAV_AVAILABLE:
-                                try:
-                                    # Create a codec context for H.264 decoding
-                                    codec_ctx = av.codec.CodecContext.create('h264', 'r')
-                                    # Send the packet to the decoder
-                                    packets = codec_ctx.parse(data_field)
-                                    frames = []
-                                    for packet in packets:
-                                        frames.extend(codec_ctx.decode(packet))
+                            # Print the first few bytes of the data for debugging
+                            if len(images) == 0:
+                                print(f"First 20 bytes of data: {[b for b in data_field[:20]]}")
+                                print(f"Data length: {len(data_field)} bytes")
 
-                                    # If we have frames, convert the first one to a numpy array
-                                    if frames:
-                                        # Get the first frame
-                                        frame = frames[0]
-                                        # Convert to numpy array
-                                        image = frame.to_ndarray(format='bgr24')
-                                    else:
-                                        raise ValueError("No frames decoded from H.264 data")
+                            # Try to decode H.264 video using our specialized function
+                            decoded_image = decode_h264(data_field)
 
-                                    # If we want to re-encode as JPEG for visualization or storage
-                                    # This is optional and can be removed if not needed
-                                    if CV2_AVAILABLE:
-                                        # Encode as JPEG
-                                        _, jpeg_data = cv2.imencode('.jpg', image)
-                                        # Decode back to numpy array (this step is usually not necessary)
-                                        # image = cv2.imdecode(jpeg_data, cv2.IMREAD_COLOR)
-                                except Exception as e:
-                                    print(f"Error decoding H.264 with PyAV: {e}")
-                                    # Fall back to OpenCV if available
-                                    if CV2_AVAILABLE:
-                                        # Try to decode with OpenCV (might not work for H.264)
-                                        np_arr = np.frombuffer(data_field, np.uint8)
-                                        image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
-                                        if image is None:
-                                            # Fallback to placeholder
-                                            image = np.zeros((480, 640, 3), dtype=np.uint8)
-                                    else:
+                            if decoded_image is not None:
+                                # Successfully decoded the image
+                                image = decoded_image
+
+                                # For debugging, save the first frame as JPEG
+                                if len(images) == 0 and CV2_AVAILABLE:
+                                    debug_path = f"debug_frame_{len(images)}.jpg"
+                                    print(f"Saving debug frame to {debug_path}")
+                                    _, jpeg_data = cv2.imencode('.jpg', image)
+                                    with open(debug_path, 'wb') as f:
+                                        f.write(jpeg_data)
+                            else:
+                                # Decoding failed, try with OpenCV as fallback
+                                if CV2_AVAILABLE:
+                                    # Try to decode with OpenCV (might not work for H.264)
+                                    np_arr = np.frombuffer(data_field, np.uint8)
+                                    image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+                                    if image is None:
                                         # Fallback to placeholder
                                         image = np.zeros((480, 640, 3), dtype=np.uint8)
-                            elif CV2_AVAILABLE:
-                                # Try to decode with OpenCV (might not work for H.264)
-                                np_arr = np.frombuffer(data_field, np.uint8)
-                                image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
-                                if image is None:
+                                else:
                                     # Fallback to placeholder
                                     image = np.zeros((480, 640, 3), dtype=np.uint8)
-                            else:
-                                # Neither PyAV nor OpenCV available, use placeholder
-                                image = np.zeros((480, 640, 3), dtype=np.uint8)
                         except Exception as e:
                             print(f"Error processing CompressedVideo: {e}")
                             # Print message structure for debugging
