@@ -5,5 +5,7 @@ opencv-python>=4.5.0
 matplotlib>=3.5.0
 # Platform-independent rosbag reader
 rosbags>=0.9.15
+# Video decoding for H.264
+av>=10.0.0
 # Uncomment when ready to use GTSAM
 # gtsam>=4.1.0
