@@ -114,7 +114,7 @@ def extract_results(optimized_values: Dict) -> Tuple[Dict[str, CameraIntrinsics]
 
 ### State Vector ($x$)
 Typically includes pose and IMU biases. Example:
- $$ x = [p_x, p_y, p_z, v_x, v_y, v_z, q_w, q_x, q_y, q_z, b_ax, b_ay, b_az, b_gx, b_gy, b_gz]$$
+ $$x = [p_x, p_y, p_z, v_x, v_y, v_z, q_w, q_x, q_y, q_z, b_ax, b_ay, b_az, b_gx, b_gy, b_gz]$$
 Where $p$ is position, $v$ is velocity (both in World frame W), $q$ is the quaternion representing orientation $\mathbf{T}_{W \leftarrow V}$, and $b_a$, $b_g$ are accelerometer and gyroscope biases (in IMU frame I).
 
 ### Prediction Step (IMU Measurement)
@@ -141,7 +141,7 @@ Correct the predicted state using wheel odometry measurement $z_k$.
 
 - Vehicle Motion Model (Example: Differential Drive):
   - $v = \frac{\text{speed}_r + \text{speed}_l}{2}$ (average wheel speed)
-  - $\omega_z = \frac{\text{speed}_r - \text{speed}_l}{\text{track\_width}}$ (yaw rate)
+  - $\omega_z = \frac{\text{speed}_r - \text{speed}_l}{\text{track}\text{\textunderscore}\text{width}}$ (yaw rate)
   - Measurement $z_k$ could be $[v, \omega_z]$.
 
 - Measurement Prediction: $\hat{z} = h(x_{k+1|k})$. Predict expected $v$ and $\omega_z$ from the EKF state (e.g., $v$ from $v_x$, $v_y$, $\omega_z$ from quaternion derivative or gyro bias).
