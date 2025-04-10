@@ -3,6 +3,12 @@
 
 **Project Goal:** Develop an offline, targetless multisensor calibration tool as per PRD/TDD.
 
+## Project Progress
+
+`[████████████▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒]` 43% Complete
+
+✓ Completed: 18 tasks | 🔄 In Progress: 1 task | ⬜ Remaining: 24 tasks
+
 ## Phases & Tasks
 
 ### Phase 1: Setup & Data Handling (~1-2 weeks)
