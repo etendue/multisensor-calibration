@@ -44,7 +44,14 @@ cd multisensor-calibration
 # Install dependencies
 pip install -r requirements.txt
 
-# Install GTSAM (follow instructions at https://gtsam.org/get_started/)
+# Install GTSAM (recommended method: conda)
+conda install -c conda-forge gtsam
+
+# Alternatively, use our installation script (tries conda, pip, and building from source)
+# ./scripts/install_gtsam.sh
+
+# Test GTSAM installation
+./scripts/test_gtsam.py
 ```
 
 ## Usage

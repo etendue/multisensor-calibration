@@ -5,9 +5,9 @@
 
 ## Project Progress
 
-`[████████████▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒▒]` 43% Complete
+`[███████████████████▒▒▒▒▒▒▒▒]` 70% Complete
 
-✓ Completed: 18 tasks | 🔄 In Progress: 1 task | ⬜ Remaining: 24 tasks
+✓ Completed: 29 tasks | 🔄 In Progress: 1 task | ⬜ Remaining: 13 tasks
 
 ## Phases & Tasks
 
@@ -47,17 +47,17 @@
 
 ### Phase 4: Optimization Backend (~3-4 weeks)
 
-- ⬜ **T4.1:** Install and configure GTSAM Python wrapper.
-- ⬜ **T4.2:** Implement factor graph construction module.
-  - ⬜ **T4.2.1:** Add variables (Pose3, Point3, Cal3_*, Bias).
-  - ⬜ **T4.2.2:** Implement creation of reprojection factors (GenericProjectionFactor or SmartProjectionFactor) with robust loss.
-  - ⬜ **T4.2.3:** Implement creation of IMU preintegration factors (ImuFactor). Configure noise models.
-  - ⬜ **T4.2.4:** Implement creation of custom wheel odometry factors with robust loss.
-  - ⬜ **T4.2.5:** Implement creation of prior factors.
-- ⬜ **T4.3:** Implement logic to populate initial values for the optimizer.
-- ⬜ **T4.4:** Implement optimization execution logic (calling GTSAM solver).
-- ⬜ **T4.5:** Implement results extraction module (getting parameters from optimized state).
-- ⬜ **T4.6:** Write basic tests for factor creation and optimization call.
+- ✓ **T4.1:** Install and configure GTSAM Python wrapper.
+- ✓ **T4.2:** Implement factor graph construction module.
+  - ✓ **T4.2.1:** Add variables (Pose3, Point3, Cal3_*, Bias).
+  - ✓ **T4.2.2:** Implement creation of reprojection factors (GenericProjectionFactor or SmartProjectionFactor) with robust loss.
+  - ✓ **T4.2.3:** Implement creation of IMU preintegration factors (ImuFactor). Configure noise models.
+  - ✓ **T4.2.4:** Implement creation of custom wheel odometry factors with robust loss.
+  - ✓ **T4.2.5:** Implement creation of prior factors.
+- ✓ **T4.3:** Implement logic to populate initial values for the optimizer.
+- ✓ **T4.4:** Implement optimization execution logic (calling GTSAM solver).
+- ✓ **T4.5:** Implement results extraction module (getting parameters from optimized state).
+- ✓ **T4.6:** Write basic tests for factor creation and optimization call.
 
 ### Phase 5: Integration, Validation & Documentation (~2-3 weeks)
 
