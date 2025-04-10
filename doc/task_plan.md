@@ -5,9 +5,9 @@
 
 ## Project Progress
 
-`[███████████████████▒▒▒▒▒▒▒▒]` 70% Complete
+`[████████████████████▒▒▒▒▒▒▒]` 75% Complete
 
-✓ Completed: 29 tasks | 🔄 In Progress: 1 task | ⬜ Remaining: 13 tasks
+✓ Completed: 33 tasks | 🔄 In Progress: 0 tasks | ⬜ Remaining: 13 tasks
 
 ## Phases & Tasks
 
@@ -27,10 +27,10 @@
 
 - ✓ **T2.1:** Implement wheel odometry calculation module (using axle lengths, wheel speeds).
 - ✓ **T2.2:** Implement basic IMU integration (orientation/position, gravity compensation).
-- 🔄 **T2.3:** Implement EKF/UKF for IMU + Wheel Odometry fusion.
-  - ⬜ **T2.3.1:** Define state vector and noise parameters.
-  - ⬜ **T2.3.2:** Implement prediction step (IMU).
-  - ⬜ **T2.3.3:** Implement update step (Wheel Odometry).
+- ✓ **T2.3:** Implement EKF/UKF for IMU + Wheel Odometry fusion.
+  - ✓ **T2.3.1:** Define state vector and noise parameters.
+  - ✓ **T2.3.2:** Implement prediction step (IMU).
+  - ✓ **T2.3.3:** Implement update step (Wheel Odometry).
 - ✓ **T2.4:** Write unit tests for odometry, IMU integration, and EKF steps.
 - ✓ **T2.5:** Integrate motion estimation into the main pipeline.
 
