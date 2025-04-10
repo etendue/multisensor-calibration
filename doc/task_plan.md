@@ -7,37 +7,37 @@
 
 ### Phase 1: Setup & Data Handling (~1-2 weeks)
 
-- [ ] **T1.1:** Setup Git repository and project structure.
-- [ ] **T1.2:** Define and implement core data structures (Python classes for sensors, parameters, state).
-- [ ] **T1.3:** Implement data loader for ROS bags (or other chosen format).
-  - [ ] **T1.3.1:** Parse Image messages.
-  - [ ] **T1.3.2:** Parse IMU messages.
-  - [ ] **T1.3.3:** Parse Wheel Encoder messages (custom format or standard Odom).
-- [ ] **T1.4:** Implement sensor data synchronization module (interpolation/nearest neighbor).
-- [ ] **T1.5:** Implement configuration file parser (YAML).
-- [ ] **T1.6:** Write unit tests for data loading and synchronization.
+- [*] **T1.1:** Setup Git repository and project structure.
+- [*] **T1.2:** Define and implement core data structures (Python classes for sensors, parameters, state).
+- [*] **T1.3:** Implement data loader for ROS bags (or other chosen format).
+  - [*] **T1.3.1:** Parse Image messages.
+  - [*] **T1.3.2:** Parse IMU messages.
+  - [*] **T1.3.3:** Parse Wheel Encoder messages (custom format or standard Odom).
+- [*] **T1.4:** Implement sensor data synchronization module (interpolation/nearest neighbor).
+- [*] **T1.5:** Implement configuration file parser (YAML).
+- [*] **T1.6:** Write unit tests for data loading and synchronization.
 
 ### Phase 2: Initial Motion Estimation (~2 weeks)
 
-- [ ] **T2.1:** Implement wheel odometry calculation module (using axle lengths, wheel speeds).
-- [ ] **T2.2:** Implement basic IMU integration (orientation/position, gravity compensation).
-- [ ] **T2.3:** Implement EKF/UKF for IMU + Wheel Odometry fusion.
+- [*] **T2.1:** Implement wheel odometry calculation module (using axle lengths, wheel speeds).
+- [*] **T2.2:** Implement basic IMU integration (orientation/position, gravity compensation).
+- [-] **T2.3:** Implement EKF/UKF for IMU + Wheel Odometry fusion.
   - [ ] **T2.3.1:** Define state vector and noise parameters.
   - [ ] **T2.3.2:** Implement prediction step (IMU).
   - [ ] **T2.3.3:** Implement update step (Wheel Odometry).
-- [ ] **T2.4:** Write unit tests for odometry, IMU integration, and EKF steps.
-- [ ] **T2.5:** Integrate motion estimation into the main pipeline.
+- [*] **T2.4:** Write unit tests for odometry, IMU integration, and EKF steps.
+- [*] **T2.5:** Integrate motion estimation into the main pipeline.
 
 ### Phase 3: Visual Processing & Initialization (~3 weeks)
 
-- [ ] **T3.1:** Integrate OpenCV for feature detection (e.g., ORB).
-- [ ] **T3.2:** Implement feature matching (e.g., BFMatcher/FLANN) and tracking (e.g., KLT).
-- [ ] **T3.3:** Implement multi-camera feature matching logic (match features across cameras at similar timestamps).
-- [ ] **T3.4:** Implement keyframe selection logic.
-- [ ] **T3.5:** Implement feature triangulation function (e.g., DLT).
-- [ ] **T3.6:** Implement visual initialization pipeline (coordinate features, poses, landmarks).
-- [ ] **T3.7:** Write unit tests for feature detection, matching, triangulation.
-- [ ] **T3.8:** Integrate visual initialization into the main pipeline.
+- [*] **T3.1:** Integrate OpenCV for feature detection (e.g., ORB).
+- [*] **T3.2:** Implement feature matching (e.g., BFMatcher/FLANN) and tracking (e.g., KLT).
+- [*] **T3.3:** Implement multi-camera feature matching logic (match features across cameras at similar timestamps).
+- [*] **T3.4:** Implement keyframe selection logic.
+- [*] **T3.5:** Implement feature triangulation function (e.g., DLT).
+- [*] **T3.6:** Implement visual initialization pipeline (coordinate features, poses, landmarks).
+- [*] **T3.7:** Write unit tests for feature detection, matching, triangulation.
+- [*] **T3.8:** Integrate visual initialization into the main pipeline.
 
 ### Phase 4: Optimization Backend (~3-4 weeks)
 
