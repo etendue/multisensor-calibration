@@ -65,6 +65,11 @@
 - ⬜ **T5.2:** Develop validation tools:
   - ⬜ **T5.2.1:** Calculate final RMS reprojection error.
   - ⬜ **T5.2.2:** Implement visualization (e.g., plot trajectory, project points into images).
+  - ⬜ **T5.2.3:** Add real-time optimization progress visualization:
+    - ⬜ Display sparse point cloud of landmarks
+    - ⬜ Show camera trajectory
+    - ⬜ Visualize optimization convergence metrics
+    - ⬜ Add controls for landmark sampling and view manipulation
 - ⬜ **T5.3:** Acquire or create suitable test and validation datasets (including diverse motion).
 - ⬜ **T5.4:** Perform end-to-end testing and debugging on datasets.
 - ⬜ **T5.5:** Tune algorithm parameters (noise models, keyframe selection, solver settings).
