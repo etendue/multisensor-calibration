@@ -81,6 +81,50 @@ class VehiclePose(TimestampedData):
         # translation: 3x1 Translation vector [x, y, z] in the world/start frame
         self.rotation = rotation
         self.translation = translation
-        self.T = np.eye(4) # Transformation matrix from vehicle frame to world frame
+        self.T = np.eye(4)  # Transformation matrix from vehicle frame to world frame
         self.T[0:3, 0:3] = rotation
         self.T[0:3, 3] = translation.flatten()
+        
+    @property
+    def transform_inverse(self) -> np.ndarray:
+        """Get the inverse transformation matrix (from world to vehicle frame)."""
+        T_inv = np.eye(4)
+        R_inv = self.rotation.T
+        t_inv = -R_inv @ self.translation
+        T_inv[0:3, 0:3] = R_inv
+        T_inv[0:3, 3] = t_inv.flatten()
+        return T_inv
+        
+    def transform_point(self, point: np.ndarray) -> np.ndarray:
+        """Transform a 3D point using this pose's transformation.
+        
+        Args:
+            point: 3D point as (x, y, z)
+            
+        Returns:
+            Transformed point as (x, y, z)
+        """
+        # Convert to homogeneous coordinates
+        point_h = np.ones(4)
+        point_h[:3] = point
+        # Apply transformation
+        transformed_h = self.T @ point_h
+        # Convert back to 3D
+        return transformed_h[:3]
+        
+    def transform_point_inverse(self, point: np.ndarray) -> np.ndarray:
+        """Transform a 3D point using the inverse of this pose's transformation.
+        
+        Args:
+            point: 3D point as (x, y, z)
+            
+        Returns:
+            Transformed point as (x, y, z)
+        """
+        # Convert to homogeneous coordinates
+        point_h = np.ones(4)
+        point_h[:3] = point
+        # Apply inverse transformation
+        transformed_h = self.transform_inverse @ point_h
+        # Convert back to 3D
+        return transformed_h[:3]

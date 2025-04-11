@@ -313,82 +313,172 @@ def create_initial_values(poses: List[VehiclePose],
 
     return values
 
-def extract_optimized_values(result_values: Any,
-                           variable_index: VariableIndex,
-                           camera_ids: List[str]) -> Tuple[Dict[str, CameraIntrinsics], Dict[str, Extrinsics], Any]:
-    """
-    Extract optimized values from the optimization result.
+def extract_optimized_values(optimized_values: Any, variable_index: Any, camera_ids: List[str]) -> Tuple[Dict[str, Any], Dict[str, Any], Any]:
+    """Extract optimized values from GTSAM Values object."""
+    # Check if GTSAM is available
+    if not check_gtsam_availability():
+        print("GTSAM is not available. Cannot extract optimized values.")
+        return {}, {}, None
 
-    Args:
-        result_values: GTSAM Values object with optimization results.
-        variable_index: Variable index used for mapping.
-        camera_ids: List of camera IDs.
+    import gtsam  # Import here to avoid issues if GTSAM is not available
 
-    Returns:
-        Tuple of:
-        - Dictionary of optimized camera intrinsics.
-        - Dictionary of optimized camera extrinsics.
-        - Optimized IMU bias (if available).
-    """
-    if not GTSAM_AVAILABLE:
-        raise ImportError("GTSAM is not available. Install with 'pip install gtsam'.")
-
-    # Extract camera intrinsics
     optimized_intrinsics = {}
-    for camera_id in camera_ids:
-        intrinsics_key = variable_index.get_camera_intrinsics_key(camera_id)
-        if result_values.exists(intrinsics_key):
-            gtsam_calibration = result_values.atCal3_S2(intrinsics_key)
+    optimized_extrinsics = {}
+    optimized_biases = None
 
-            # Convert back to our data structure
-            optimized_intrinsics[camera_id] = CameraIntrinsics(
-                fx=gtsam_calibration.fx(),
-                fy=gtsam_calibration.fy(),
-                cx=gtsam_calibration.px(),
-                cy=gtsam_calibration.py(),
-                distortion_coeffs=np.zeros(5)  # Simplified for now
+    # Helper function to convert GTSAM Pose3 to our Extrinsics type
+    def convert_pose3_to_extrinsics(pose_value: Any) -> Extrinsics:
+        if isinstance(pose_value, gtsam.Pose3):
+            return Extrinsics(
+                rotation=pose_value.rotation().matrix(),
+                translation=np.array([
+                    pose_value.translation().x(),
+                    pose_value.translation().y(),
+                    pose_value.translation().z()
+                ])
+            )
+        elif isinstance(pose_value, np.ndarray):
+            # Handle different numpy array shapes
+            if pose_value.shape == (4, 4):  # 4x4 transformation matrix
+                return Extrinsics(
+                    rotation=pose_value[:3, :3],
+                    translation=pose_value[:3, 3]
+                )
+            elif pose_value.shape == (3, 3):  # 3x3 rotation matrix only
+                return Extrinsics(
+                    rotation=pose_value,
+                    translation=np.zeros(3)
+                )
+            elif pose_value.shape == (3,):  # 3D translation vector only
+                return Extrinsics(
+                    rotation=np.eye(3),
+                    translation=pose_value
+                )
+            else:
+                print(f"Warning: Unexpected numpy array shape: {pose_value.shape}, using identity")
+                return Extrinsics(
+                    rotation=np.eye(3),
+                    translation=np.zeros(3)
+                )
+        else:
+            print(f"Warning: Unexpected pose type: {type(pose_value)}, using identity")
+            return Extrinsics(
+                rotation=np.eye(3),
+                translation=np.zeros(3)
             )
 
+    # Helper function to extract Point3 values safely
+    def extract_point3(point_value: Any) -> np.ndarray:
+        if isinstance(point_value, gtsam.Point3):
+            return np.array([point_value.x(), point_value.y(), point_value.z()])
+        elif isinstance(point_value, np.ndarray):
+            return point_value
+        else:
+            print(f"Warning: Unexpected point type: {type(point_value)}, using zeros")
+            return np.zeros(3)
+
+    # Helper function to check if a key exists in GTSAM Values
+    def has_key(values: gtsam.Values, key: Any) -> bool:
+        try:
+            return values.exists(key)
+        except:
+            try:
+                # Older GTSAM versions
+                return key in [values.keys()[i] for i in range(values.size())]
+            except:
+                return False
+
+    # Helper function to safely extract calibration parameters
+    def extract_calibration(cal_value: Any) -> Tuple[float, float, float, float]:
+        try:
+            if hasattr(cal_value, 'fx') and hasattr(cal_value, 'fy') and hasattr(cal_value, 'px') and hasattr(cal_value, 'py'):
+                # Standard GTSAM Cal3_S2 or similar
+                return cal_value.fx(), cal_value.fy(), cal_value.px(), cal_value.py()
+            elif isinstance(cal_value, np.ndarray):
+                # Numpy array format [fx, fy, cx, cy]
+                if len(cal_value) >= 4:
+                    return cal_value[0], cal_value[1], cal_value[2], cal_value[3]
+                else:
+                    print(f"Warning: Calibration array too short: {cal_value}, using defaults")
+                    return 500.0, 500.0, 320.0, 240.0
+            else:
+                print(f"Warning: Unknown calibration type: {type(cal_value)}, using defaults")
+                return 500.0, 500.0, 320.0, 240.0
+        except Exception as e:
+            print(f"Warning: Error extracting calibration: {e}, using defaults")
+            return 500.0, 500.0, 320.0, 240.0
+
+    # Extract camera intrinsics
+    for cam_id in camera_ids:
+        try:
+            intrinsics_key = variable_index.get_camera_intrinsics_key(cam_id)
+            if has_key(optimized_values, intrinsics_key):
+                # Try different methods to extract calibration
+                try:
+                    cal = optimized_values.atCal3_S2(intrinsics_key)
+                except Exception as e1:
+                    try:
+                        # Try generic retrieval
+                        cal = optimized_values.at(intrinsics_key)
+                    except Exception as e2:
+                        print(f"Warning: Could not extract intrinsics for camera {cam_id}: {e1}, {e2}")
+                        cal = None
+
+                if cal is not None:
+                    fx, fy, cx, cy = extract_calibration(cal)
+                    optimized_intrinsics[cam_id] = CameraIntrinsics(
+                        fx=fx, fy=fy, cx=cx, cy=cy,
+                        distortion_coeffs=np.zeros(5)  # Placeholder, update if using distortion
+                    )
+                else:
+                    optimized_intrinsics[cam_id] = None
+            else:
+                optimized_intrinsics[cam_id] = None
+        except Exception as e:
+            print(f"Warning: Could not extract intrinsics for camera {cam_id}: {e}")
+            optimized_intrinsics[cam_id] = None
+
     # Extract camera extrinsics
-    optimized_extrinsics = {}
-    for camera_id in camera_ids:
-        extrinsics_key = variable_index.get_camera_extrinsics_key(camera_id)
-        if result_values.exists(extrinsics_key):
-            gtsam_pose = result_values.atPose3(extrinsics_key)
+    for cam_id in camera_ids:
+        try:
+            extrinsics_key = variable_index.get_camera_extrinsics_key(cam_id)
+            if has_key(optimized_values, extrinsics_key):
+                # Try different methods to extract pose
+                try:
+                    pose_value = optimized_values.atPose3(extrinsics_key)
+                except Exception as e1:
+                    try:
+                        # Try generic retrieval
+                        pose_value = optimized_values.at(extrinsics_key)
+                    except Exception as e2:
+                        print(f"Warning: Could not extract extrinsics for camera {cam_id}: {e1}, {e2}")
+                        pose_value = None
 
-            # Convert back to our data structure
-            rotation = gtsam_pose.rotation().matrix()
-            translation = np.array([
-                gtsam_pose.translation().x(),
-                gtsam_pose.translation().y(),
-                gtsam_pose.translation().z()
-            ])
+                if pose_value is not None:
+                    optimized_extrinsics[cam_id] = convert_pose3_to_extrinsics(pose_value)
+                else:
+                    optimized_extrinsics[cam_id] = None
+            else:
+                optimized_extrinsics[cam_id] = None
+        except Exception as e:
+            print(f"Warning: Could not extract extrinsics for camera {cam_id}: {e}")
+            optimized_extrinsics[cam_id] = None
 
-            optimized_extrinsics[camera_id] = Extrinsics(rotation, translation)
-
-    # Extract IMU bias if available
-    optimized_bias = None
+    # Extract IMU biases if available
     try:
         bias_key = variable_index.get_imu_bias_key()
-        if result_values.exists(bias_key):
-            gtsam_bias = result_values.atConstantBias(bias_key)
+        if has_key(optimized_values, bias_key):
+            try:
+                optimized_biases = optimized_values.atConstantBias(bias_key)
+            except Exception as e1:
+                try:
+                    # Try generic retrieval
+                    optimized_biases = optimized_values.at(bias_key)
+                except Exception as e2:
+                    print(f"Warning: Could not extract IMU biases: {e1}, {e2}")
+                    optimized_biases = None
+    except Exception as e:
+        print(f"Warning: Could not extract IMU biases: {e}")
+        optimized_biases = None
 
-            # Convert to numpy arrays
-            accel_bias = np.array([
-                gtsam_bias.accelerometer().x(),
-                gtsam_bias.accelerometer().y(),
-                gtsam_bias.accelerometer().z()
-            ])
-
-            gyro_bias = np.array([
-                gtsam_bias.gyroscope().x(),
-                gtsam_bias.gyroscope().y(),
-                gtsam_bias.gyroscope().z()
-            ])
-
-            optimized_bias = (accel_bias, gyro_bias)
-    except KeyError:
-        # No IMU bias in the optimization
-        pass
-
-    return optimized_intrinsics, optimized_extrinsics, optimized_bias
+    return optimized_intrinsics, optimized_extrinsics, optimized_biases

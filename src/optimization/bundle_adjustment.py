@@ -18,7 +18,7 @@ except ImportError:
     GTSAM_AVAILABLE = False
     print("Warning: GTSAM not available. Install with 'pip install gtsam' for optimization.")
 
-def run_bundle_adjustment(factor_graph: Any, initial_values: Any, variable_index: Any = None, config: Dict = None) -> Any:
+def run_bundle_adjustment(factor_graph: Any, initial_values: Any, variable_index: Any = None, config: Dict = None) -> Tuple[Any, Dict[str, List[float]]]:
     """
     Runs the non-linear least-squares optimization to solve the factor graph.
 
@@ -29,9 +29,20 @@ def run_bundle_adjustment(factor_graph: Any, initial_values: Any, variable_index
         config: Configuration parameters for the optimization.
 
     Returns:
-        GTSAM Values object containing the optimized values.
+        Tuple containing:
+        - GTSAM Values object containing the optimized values
+        - Dictionary with optimization metrics (errors, times) over iterations
     """
     print("Running Bundle Adjustment (Non-linear Optimization)...")
+
+    # Initialize progress tracking
+    progress = {
+        'total_errors': [],
+        'reprojection_errors': [],
+        'times': [],
+        'iterations': []
+    }
+    start_time = time.time()
 
     # Check if GTSAM is available
     if not check_gtsam_availability():
@@ -39,7 +50,7 @@ def run_bundle_adjustment(factor_graph: Any, initial_values: Any, variable_index
         # Placeholder: Return dummy optimized values
         time.sleep(5.0)  # Simulate heavy computation
         print("Optimization finished.")
-        return initial_values
+        return initial_values, progress
 
     # Initialize configuration with defaults if not provided
     if config is None:
@@ -78,18 +89,51 @@ def run_bundle_adjustment(factor_graph: Any, initial_values: Any, variable_index
 
     # Run optimization
     print("Starting optimization...")
-    start_time = time.time()
-    result = optimizer.optimize()
+    
+    # Record initial errors
+    current_values = initial_values
+    total_error = factor_graph.error(current_values)
+    reproj_errors = calculate_reprojection_errors(factor_graph, current_values)
+    
+    progress['total_errors'].append(total_error)
+    progress['reprojection_errors'].append(reproj_errors['rms'])
+    progress['times'].append(0.0)
+    progress['iterations'].append(0)
+
+    # Optimization loop with progress tracking
+    try:
+        for iteration in range(max_iterations):
+            # Perform one optimization step
+            current_values = optimizer.iterate()
+            
+            # Record progress
+            current_time = time.time() - start_time
+            total_error = factor_graph.error(current_values)
+            reproj_errors = calculate_reprojection_errors(factor_graph, current_values)
+            
+            progress['total_errors'].append(total_error)
+            progress['reprojection_errors'].append(reproj_errors['rms'])
+            progress['times'].append(current_time)
+            progress['iterations'].append(iteration + 1)
+            
+            # Check for convergence
+            if optimizer.lambda_() < convergence_delta:
+                break
+    except Exception as e:
+        print(f"Warning: Error during optimization iteration: {e}")
+        # Fall back to basic optimize() call
+        current_values = optimizer.optimize()
+
     end_time = time.time()
 
     # Print optimization statistics
-    error_before = factor_graph.error(initial_values)
-    error_after = factor_graph.error(result)
+    error_before = progress['total_errors'][0]
+    error_after = progress['total_errors'][-1]
     print(f"Optimization completed in {end_time - start_time:.2f} seconds.")
     print(f"Initial error: {error_before:.6f}, Final error: {error_after:.6f}")
     print(f"Error reduction: {(1.0 - error_after / error_before) * 100:.2f}%")
 
-    return result
+    return current_values, progress
 
 def extract_calibration_results(optimized_values: Any, variable_index: Any, camera_ids: List[str]) -> Tuple[Dict[str, CameraIntrinsics], Dict[str, Extrinsics], Any]:
     """

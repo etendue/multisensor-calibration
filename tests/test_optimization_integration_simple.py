@@ -10,8 +10,9 @@ sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 # Import modules
 from src.data_structures import VehiclePose, Landmark, Feature, CameraIntrinsics, Extrinsics, ImuData, WheelEncoderData
 from src.optimization.factor_graph import build_factor_graph
-from src.optimization.bundle_adjustment import run_bundle_adjustment
+from src.optimization.bundle_adjustment import run_bundle_adjustment, extract_calibration_results
 from src.optimization.gtsam_utils import check_gtsam_availability
+from src.validation.metrics import visualize_results
 
 def main():
     """Test the optimization backend integration."""
@@ -97,13 +98,49 @@ def main():
     # 10. Run bundle adjustment
     print("\n--- Running Bundle Adjustment ---")
     if check_gtsam_availability():
-        optimized_values = run_bundle_adjustment(
+        optimized_values, optimization_progress = run_bundle_adjustment(
             factor_graph, initial_values, variable_index, config=optimization_config
         )
         print("\nOptimization successful!")
+
+        # Print optimization progress summary
+        if optimization_progress:
+            total_error_reduction = (
+                optimization_progress['total_errors'][0] - optimization_progress['total_errors'][-1]
+            ) / optimization_progress['total_errors'][0] * 100
+            
+            reproj_error_reduction = (
+                optimization_progress['reprojection_errors'][0] - optimization_progress['reprojection_errors'][-1]
+            ) / optimization_progress['reprojection_errors'][0] * 100
+            
+            print(f"\nOptimization Progress Summary:")
+            print(f"  Total iterations: {len(optimization_progress['iterations'])}")
+            print(f"  Total error reduction: {total_error_reduction:.1f}%")
+            print(f"  Reprojection error reduction: {reproj_error_reduction:.1f}%")
+            print(f"  Total time: {optimization_progress['times'][-1]:.2f} seconds")
     else:
         print("GTSAM is not available. Skipping optimization.")
         optimized_values = initial_values
+        optimization_progress = None
+
+    # 11. Extract results
+    print("\n--- Extracting Results ---")
+    camera_ids = list(intrinsics.keys())
+    final_intrinsics, final_extrinsics, final_biases = extract_calibration_results(
+        optimized_values, variable_index, camera_ids
+    )
+
+    # 12. Print results
+    print("\n--- Final Results ---")
+    for cam_id, intr in final_intrinsics.items():
+        if intr is not None:
+            print(f"Camera {cam_id} intrinsics:")
+            print(f"  fx={intr.fx:.2f}, fy={intr.fy:.2f}")
+            print(f"  cx={intr.cx:.2f}, cy={intr.cy:.2f}")
+
+    # 13. Visualize results
+    print("\n--- Visualizing Results ---")
+    visualize_results(landmarks, poses, final_intrinsics, final_extrinsics, optimization_progress)
 
     print("\n--- Test Complete ---")
 

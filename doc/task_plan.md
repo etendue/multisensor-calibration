@@ -5,9 +5,9 @@
 
 ## Project Progress
 
-`[█████████████████████▒▒▒▒▒▒]` 76% Complete
+`[██████████████████████▒▒▒▒]` 83% Complete
 
-✓ Completed: 34 tasks | 🔄 In Progress: 0 tasks | ⬜ Remaining: 13 tasks
+✓ Completed: 39 tasks | 🔄 In Progress: 0 tasks | ⬜ Remaining: 8 tasks
 
 ## Phases & Tasks
 
@@ -63,14 +63,14 @@
 
 - ✓ **T5.1:** Integrate optimization backend into the main pipeline script.
   - ⬜ **T5.1.1:** Fix result extraction in `extract_optimized_values` to handle different GTSAM versions and return types.
-- ⬜ **T5.2:** Develop validation tools:
-  - ⬜ **T5.2.1:** Calculate final RMS reprojection error.
-  - ⬜ **T5.2.2:** Implement visualization (e.g., plot trajectory, project points into images).
-  - ⬜ **T5.2.3:** Add real-time optimization progress visualization:
-    - ⬜ Display sparse point cloud of landmarks
-    - ⬜ Show camera trajectory
-    - ⬜ Visualize optimization convergence metrics
-    - ⬜ Add controls for landmark sampling and view manipulation
+- ✓ **T5.2:** Develop validation tools:
+  - ✓ **T5.2.1:** Calculate final RMS reprojection error.
+  - ✓ **T5.2.2:** Implement visualization (e.g., plot trajectory, project points into images).
+  - ✓ **T5.2.3:** Add real-time optimization progress visualization:
+    - ✓ Display sparse point cloud of landmarks
+    - ✓ Show camera trajectory
+    - ✓ Visualize optimization convergence metrics
+    - ✓ Add controls for landmark sampling and view manipulation
 - ⬜ **T5.3:** Acquire or create suitable test and validation datasets (including diverse motion).
 - ⬜ **T5.4:** Perform end-to-end testing and debugging on datasets.
 - ⬜ **T5.5:** Tune algorithm parameters (noise models, keyframe selection, solver settings).

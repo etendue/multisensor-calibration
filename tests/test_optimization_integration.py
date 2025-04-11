@@ -12,6 +12,7 @@ from src.data_structures import VehiclePose, Landmark, Feature, CameraIntrinsics
 from src.optimization.factor_graph import build_factor_graph
 from src.optimization.bundle_adjustment import run_bundle_adjustment, extract_calibration_results
 from src.optimization.gtsam_utils import check_gtsam_availability
+from src.validation.metrics import visualize_results
 
 def main():
     """Test the optimization backend integration."""
@@ -97,12 +98,14 @@ def main():
     # 10. Run bundle adjustment
     print("\n--- Running Bundle Adjustment ---")
     if check_gtsam_availability():
-        optimized_values = run_bundle_adjustment(
+        optimized_values, optimization_progress = run_bundle_adjustment(
             factor_graph, initial_values, variable_index, config=optimization_config
         )
+        print("\nOptimization successful!")
     else:
         print("GTSAM is not available. Skipping optimization.")
         optimized_values = initial_values
+        optimization_progress = None
 
     # 11. Extract results
     print("\n--- Extracting Calibration Results ---")
@@ -131,6 +134,10 @@ def main():
 
     print("\nOptimized IMU Biases:")
     print(f"  {final_biases}")
+
+    # 13. Visualize results
+    print("\n--- Visualizing Results ---")
+    visualize_results(landmarks, poses, final_intrinsics, final_extrinsics, optimization_progress)
 
     print("\n--- Test Complete ---")
 
