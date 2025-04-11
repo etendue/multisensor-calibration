@@ -4,14 +4,14 @@ import os
 import sys
 import numpy as np
 
-# Add the src directory to the Python path
-sys.path.append(os.path.join(os.path.dirname(os.path.abspath(__file__)), 'src'))
+# Add the parent directory to the Python path
+sys.path.append(os.path.dirname(os.path.dirname(os.path.abspath(__file__))))
 
 # Import modules
-from data_structures import VehiclePose, Landmark, Feature, CameraIntrinsics, Extrinsics, ImuData, WheelEncoderData
-from optimization.factor_graph import build_factor_graph
-from optimization.bundle_adjustment import run_bundle_adjustment, extract_calibration_results
-from optimization.gtsam_utils import check_gtsam_availability
+from src.data_structures import VehiclePose, Landmark, Feature, CameraIntrinsics, Extrinsics, ImuData, WheelEncoderData
+from src.optimization.factor_graph import build_factor_graph
+from src.optimization.bundle_adjustment import run_bundle_adjustment, extract_calibration_results
+from src.optimization.gtsam_utils import check_gtsam_availability
 
 def main():
     """Test the optimization backend integration."""
