@@ -78,6 +78,45 @@ Use Python classes (as defined in the code skeleton) for ImageData, ImuData, Whe
 
 - **Update (Wheel Odometry)**: Use a suitable vehicle motion model (e.g., differential drive for velocity/yaw rate, or Ackermann if steering angle available) based on wheel speeds. Update step corrects position and yaw.
 
+```mermaid
+graph TD
+    subgraph "EKF State Vector"
+        State["$X = \begin{bmatrix} p_V \\ v_V \\ q_{WV} \\ b_g \\ b_a \end{bmatrix}$"]
+    end
+
+    subgraph "Prediction Step (IMU)"
+        IMU["IMU Measurements"] --> IMUPredict["State Propagation"]
+        IMUPredict --> |"$\dot{p}_V = v_V$"| PosUpdate["Position Update"]
+        IMUPredict --> |"$\dot{v}_V = R(q_{WV})(a_I - b_a) + g$"| VelUpdate["Velocity Update"]
+        IMUPredict --> |"$\dot{q}_{WV} = \frac{1}{2}q_{WV} \otimes [0, \omega_I - b_g]$"| OrientUpdate["Orientation Update"]
+    end
+
+    subgraph "Update Step (Wheel Odometry)"
+        Wheels["Wheel Encoder Data"] --> WheelModel["Vehicle Motion Model"]
+        WheelModel --> |"Measurement"| KFUpdate["Kalman Filter Update"]
+        KFUpdate --> |"Corrects"| Position["Position & Yaw"]
+    end
+
+    IMUPredict --> PredictedState["Predicted State"]
+    PredictedState --> KFUpdate
+    KFUpdate --> UpdatedState["Updated State"]
+
+    style State fill:#f9f,stroke:#333,stroke-width:2px
+    style PredictedState fill:#bbf,stroke:#333,stroke-width:1px
+    style UpdatedState fill:#bfb,stroke:#333,stroke-width:1px
+```
+
+Where:
+- $p_V$: Vehicle position in world frame
+- $v_V$: Vehicle velocity in world frame
+- $q_{WV}$: Quaternion representing rotation from vehicle to world frame
+- $b_g$: Gyroscope bias
+- $b_a$: Accelerometer bias
+- $a_I$: Measured acceleration in IMU frame
+- $\omega_I$: Measured angular velocity in IMU frame
+- $g$: Gravity vector in world frame
+- $R(q)$: Rotation matrix corresponding to quaternion $q$
+
 ### Visual Processing
 
 - **Feature Detector/Descriptor**: ORB (good balance of speed and performance, rotation invariant). Alternative: SIFT (more robust, but patented/slower). Use OpenCV implementation.
@@ -86,11 +125,88 @@ Use Python classes (as defined in the code skeleton) for ImageData, ImuData, Whe
 
 - **Keyframe Selection**: Select keyframes based on time interval, distance traveled, rotation angle, and number of tracked features/matches.
 
+```mermaid
+graph TD
+    subgraph "Feature Detection & Description"
+        Image["Camera Image"] --> |"Extract"| Features["Feature Points"]
+        Features --> |"Compute"| Descriptors["Feature Descriptors"]
+    end
+
+    subgraph "Feature Matching & Tracking"
+        Descriptors --> |"Match"| DescriptorMatching["Descriptor Matching"]
+        Features --> |"Track"| KLT["KLT Tracking"]
+        DescriptorMatching --> |"Ratio Test"| FilteredMatches["Filtered Matches"]
+        KLT --> |"Flow Validation"| TrackedFeatures["Tracked Features"]
+    end
+
+    subgraph "Keyframe Selection"
+        Criteria["Selection Criteria"] --> TimeInterval["Time Interval"]
+        Criteria --> Distance["Distance Traveled"]
+        Criteria --> Rotation["Rotation Angle"]
+        Criteria --> FeatureCount["Feature Count"]
+        TimeInterval & Distance & Rotation & FeatureCount --> |"Evaluate"| KeyframeDecision["Keyframe Decision"]
+    end
+
+    FilteredMatches --> |"Input to"| SfM["Structure from Motion"]
+    TrackedFeatures --> |"Input to"| SfM
+    KeyframeDecision --> |"Controls"| SfM
+
+    style Image fill:#bbf,stroke:#333,stroke-width:1px
+    style Features fill:#fbb,stroke:#333,stroke-width:1px
+    style Descriptors fill:#fbb,stroke:#333,stroke-width:1px
+    style FilteredMatches fill:#bfb,stroke:#333,stroke-width:1px
+    style TrackedFeatures fill:#bfb,stroke:#333,stroke-width:1px
+    style KeyframeDecision fill:#fbf,stroke:#333,stroke-width:1px
+```
+
+The diagram illustrates the visual processing pipeline, showing how features are detected, described, matched/tracked across frames, and how keyframes are selected based on multiple criteria. The outputs feed into the Structure from Motion (SfM) component.
+
+![Feature Detection and Matching](images/feature_matching.svg)
+
+The above illustration shows how distinctive features are detected in images, described using local descriptors, and matched between frames. These correspondences are essential for triangulation and camera pose estimation.
+
 ### Initialization
 
 - **Triangulation**: Linear triangulation (DLT) initially, potentially refined non-linearly. Use matched features between keyframes or cameras with sufficient baseline.
 
 - **Initial Poses/Structure**: Use poses from ego-motion estimate and triangulated points. Potentially run a small, vision-only BA on initial keyframes/landmarks.
+
+```mermaid
+graph TD
+    subgraph "Input Data"
+        EgoMotion["Ego-Motion Estimates"] --> InitialPoses["Initial Camera Poses"]
+        FeatureMatches["Feature Matches"] --> Triangulation
+    end
+
+    subgraph "Triangulation Process"
+        InitialPoses --> Triangulation["Linear Triangulation (DLT)"]
+        Triangulation --> |"3D Points"| InitialLandmarks["Initial Landmarks"]
+        InitialLandmarks --> |"Refine"| NonlinearRefinement["Non-linear Refinement"]
+        NonlinearRefinement --> RefinedLandmarks["Refined Landmarks"]
+    end
+
+    subgraph "Initial Bundle Adjustment"
+        InitialPoses --> |"Input"| InitialBA["Vision-only BA"]
+        RefinedLandmarks --> |"Input"| InitialBA
+        InitialBA --> |"Output"| RefinedPoses["Refined Camera Poses"]
+        InitialBA --> |"Output"| FinalLandmarks["Final Initial Landmarks"]
+    end
+
+    RefinedPoses & FinalLandmarks --> |"Input to"| FactorGraph["Factor Graph Construction"]
+
+    style EgoMotion fill:#bbf,stroke:#333,stroke-width:1px
+    style FeatureMatches fill:#bbf,stroke:#333,stroke-width:1px
+    style InitialLandmarks fill:#fbb,stroke:#333,stroke-width:1px
+    style RefinedLandmarks fill:#fbf,stroke:#333,stroke-width:1px
+    style RefinedPoses fill:#bfb,stroke:#333,stroke-width:1px
+    style FinalLandmarks fill:#bfb,stroke:#333,stroke-width:1px
+```
+
+The diagram shows the initialization process, starting with ego-motion estimates and feature matches, proceeding through triangulation to create initial 3D landmarks, and optionally performing a vision-only bundle adjustment to refine both camera poses and landmarks before constructing the full factor graph.
+
+![Triangulation from Multiple Views](images/triangulation.svg)
+
+The illustration above demonstrates the geometric principle of triangulation. By finding corresponding points in multiple camera views and knowing the camera poses, we can determine the 3D position of a point by finding the intersection of rays projected from the camera centers through the image points. The epipolar constraint helps reduce the search space for matching features.
 
 ### Optimization (Factor Graph)
 
@@ -106,12 +222,56 @@ Use Python classes (as defined in the code skeleton) for ImageData, ImuData, Whe
 
 - **Solver**: Levenberg-Marquardt (gtsam.LevenbergMarquardtOptimizer). Configure convergence criteria (error tolerance, max iterations).
 
+```mermaid
+graph TD
+    subgraph "Factor Graph Variables"
+        Poses["Vehicle Poses $T_{W\leftarrow V_k}$"]
+        Landmarks["3D Landmarks $X_i$"]
+        CamIntrinsics["Camera Intrinsics $K_j$"]
+        CamExtrinsics["Camera Extrinsics $T_{V\leftarrow C_j}$"]
+        IMUExtrinsics["IMU Extrinsic $T_{V\leftarrow I}$"]
+        IMUBiases["IMU Biases $b_g, b_a$"]
+    end
+
+    subgraph "Factor Types"
+        ReprojFactors["Reprojection Factors"] --> |"Connects"| Poses & Landmarks & CamIntrinsics & CamExtrinsics
+        IMUFactors["IMU Factors"] --> |"Connects"| Poses & IMUExtrinsics & IMUBiases
+        OdomFactors["Wheel Odometry Factors"] --> |"Connects"| Poses
+        PriorFactors["Prior Factors"] --> |"Connects"| Poses & CamIntrinsics & CamExtrinsics & IMUExtrinsics & IMUBiases
+    end
+
+    subgraph "Optimization"
+        FactorGraph["Complete Factor Graph"] --> Solver["Levenberg-Marquardt Solver"]
+        Solver --> |"Iterative Optimization"| OptimizedState["Optimized State Vector"]
+    end
+
+    ReprojFactors & IMUFactors & OdomFactors & PriorFactors --> FactorGraph
+
+    style Poses fill:#bbf,stroke:#333,stroke-width:1px
+    style Landmarks fill:#bbf,stroke:#333,stroke-width:1px
+    style CamIntrinsics fill:#fbf,stroke:#333,stroke-width:1px
+    style CamExtrinsics fill:#fbf,stroke:#333,stroke-width:1px
+    style IMUExtrinsics fill:#fbf,stroke:#333,stroke-width:1px
+    style IMUBiases fill:#fbf,stroke:#333,stroke-width:1px
+    style OptimizedState fill:#bfb,stroke:#333,stroke-width:2px
+```
+
+The diagram illustrates the factor graph optimization structure, showing the variables being estimated (poses, landmarks, intrinsics, extrinsics, biases) and how different types of factors connect these variables. The complete factor graph is then optimized using the Levenberg-Marquardt algorithm to produce the final calibrated parameters.
+
+![Factor Graph Optimization](images/factor_graph.svg)
+
+The illustration above provides a more intuitive representation of the factor graph. Variables (circles and rectangles) represent the parameters we want to estimate, while factors (triangles and squares) represent constraints derived from measurements. The optimization process finds the variable values that minimize the sum of all factor errors, effectively finding the most consistent set of parameters given all available measurements.
+
 ### Coordinate Frames
 
 - **Vehicle Frame (V)**: Origin at rear axle center, $X_{fwd}, Y_{left}, Z_{up}$. All extrinsics are defined relative to this frame.
 - **IMU Frame (I)**: Sensor's native frame. $\mathbf{T}_{V \leftarrow I}$ is the IMU extrinsic to estimate.
 - **Camera Frame (C)**: Sensor's native optical frame ($Z_{fwd}, X_{right}, Y_{down}$). $\mathbf{T}_{V \leftarrow C_i}$ is the extrinsic for camera i.
 - **World Frame (W)**: Inertial frame, often aligned with the first vehicle pose. Vehicle poses $\mathbf{T}_{W \leftarrow V_k}$ are estimated during optimization.
+
+![Coordinate Frames](images/coordinate_frames.svg)
+
+The diagram illustrates the relationship between the different coordinate frames in the system. The vehicle frame (V) serves as the reference frame for all extrinsics. The camera (C) and IMU (I) frames are defined relative to the vehicle frame, while the world frame (W) provides the global reference for vehicle poses.
 
 ## 5. Key Data Structures (Python Classes)
 
