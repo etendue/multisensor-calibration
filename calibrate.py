@@ -15,7 +15,8 @@ from data_handling.config_parser import load_config, parse_intrinsics, parse_ext
 from motion_estimation.ego_motion import estimate_initial_ego_motion
 from visual_processing.sfm_initializer import perform_visual_initialization
 from optimization.factor_graph import build_factor_graph
-from optimization.bundle_adjustment import run_bundle_adjustment, extract_calibration_results
+from optimization.bundle_adjustment import run_bundle_adjustment, extract_calibration_results, calculate_reprojection_errors
+from optimization.gtsam_utils import check_gtsam_availability
 from validation.metrics import calculate_reprojection_error, visualize_results, print_calibration_report
 
 def parse_arguments():
@@ -65,45 +66,45 @@ def main():
     )
 
     # 4. Build Factor Graph
-    factor_graph = build_factor_graph(
-        initial_trajectory, landmarks, features, current_intrinsics,
-        initial_extrinsics_guess, imu, wheels
-    )
+    # Get optimization parameters from config
+    optimization_config = config.get('optimization', {})
 
-    # Prepare initial values dictionary for the optimizer
-    # This is a simplified version - in reality, this would be more complex
-    initial_values_for_opt = {
-        f"Pose_{i}": pose for i, pose in enumerate(initial_trajectory)
-    }
-    # Add other variables to initial values
-    initial_values_for_opt.update({
-        f"Intrinsics_{cam_id}": intr for cam_id, intr in current_intrinsics.items()
-    })
-    initial_values_for_opt.update({
-        f"Extrinsics_{cam_id}": extr for cam_id, extr in initial_extrinsics_guess.items()
-    })
+    # Build the factor graph
+    factor_graph, initial_values, variable_index = build_factor_graph(
+        initial_trajectory, landmarks, features, current_intrinsics,
+        initial_extrinsics_guess, imu, wheels, config=optimization_config
+    )
 
     # 5. Run Bundle Adjustment
-    # In a real implementation, this would use a specific optimization library
-    # For now, we'll use our placeholder that returns the initial values
-    print("\n--- Skipping Optimization Step (Requires specific library) ---")
-    # optimized_values = run_bundle_adjustment(factor_graph, initial_values_for_opt)
-
-    # Simulate having results for the next step
-    simulated_optimized_values = {
-        f"Intrinsics_{cam_id}": intr for cam_id, intr in initial_intrinsics_guess.items()
-    }
-    simulated_optimized_values.update({
-        f"Extrinsics_{cam_id}": extr for cam_id, extr in initial_extrinsics_guess.items()
-    })
+    # Check if GTSAM is available
+    if check_gtsam_availability():
+        print("\n--- Running Bundle Adjustment Optimization ---")
+        optimized_values = run_bundle_adjustment(
+            factor_graph, initial_values, variable_index, config=optimization_config
+        )
+    else:
+        print("\n--- Skipping Optimization Step (GTSAM not available) ---")
+        print("Install GTSAM with 'conda install -c conda-forge gtsam' for full optimization.")
+        # Use initial values as a fallback
+        optimized_values = initial_values
 
     # 6. Extract Results
-    final_intrinsics, final_extrinsics, final_biases = extract_calibration_results(simulated_optimized_values)
+    # Get camera IDs from the intrinsics dictionary
+    camera_ids = list(current_intrinsics.keys())
+    final_intrinsics, final_extrinsics, final_biases = extract_calibration_results(
+        optimized_values, variable_index, camera_ids
+    )
 
     # 7. Validate Results
-    reprojection_error = calculate_reprojection_error(
-        landmarks, features, initial_trajectory, final_intrinsics, final_extrinsics
-    )
+    # Calculate reprojection errors using the factor graph if GTSAM is available
+    if check_gtsam_availability():
+        error_stats = calculate_reprojection_errors(factor_graph, optimized_values)
+        reprojection_error = error_stats.get('rms', 0.0)
+    else:
+        # Fall back to the simplified implementation
+        reprojection_error = calculate_reprojection_error(
+            landmarks, features, initial_trajectory, final_intrinsics, final_extrinsics
+        )
 
     # Print calibration report
     print_calibration_report(final_intrinsics, final_extrinsics, reprojection_error)
