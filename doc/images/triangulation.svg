@@ -3,52 +3,52 @@
   <!-- 3D Point -->
   <circle cx="300" cy="150" r="8" fill="red"/>
   <text x="310" y="145" font-family="Arial" font-size="14" fill="black">X (3D Point)</text>
-  
+
   <!-- Camera 1 -->
   <rect x="150" y="250" width="30" height="20" fill="darkblue" stroke="black" stroke-width="1"/>
   <polygon points="180,250 180,270 195,260" fill="darkblue" stroke="black" stroke-width="1"/>
   <text x="140" y="290" font-family="Arial" font-size="14" fill="black">Camera 1</text>
-  
+
   <!-- Camera 2 -->
   <rect x="450" y="250" width="30" height="20" fill="darkblue" stroke="black" stroke-width="1"/>
   <polygon points="450,250 450,270 435,260" fill="darkblue" stroke="black" stroke-width="1"/>
   <text x="440" y="290" font-family="Arial" font-size="14" fill="black">Camera 2</text>
-  
+
   <!-- Projection Lines -->
   <line x1="180" y1="260" x2="300" y2="150" stroke="red" stroke-width="2" stroke-dasharray="5,3"/>
   <line x1="450" y1="260" x2="300" y2="150" stroke="red" stroke-width="2" stroke-dasharray="5,3"/>
-  
+
   <!-- Image Planes -->
   <line x1="120" y1="220" x2="220" y2="220" stroke="green" stroke-width="2"/>
   <line x1="380" y1="220" x2="480" y2="220" stroke="green" stroke-width="2"/>
   <text x="130" y="215" font-family="Arial" font-size="12" fill="green">Image Plane 1</text>
   <text x="390" y="215" font-family="Arial" font-size="12" fill="green">Image Plane 2</text>
-  
+
   <!-- Projected Points -->
   <circle cx="180" cy="220" r="5" fill="blue"/>
   <circle cx="450" cy="220" r="5" fill="blue"/>
   <text x="185" y="215" font-family="Arial" font-size="12" fill="blue">x₁</text>
   <text x="435" y="215" font-family="Arial" font-size="12" fill="blue">x₂</text>
-  
+
   <!-- Optical Centers -->
   <circle cx="180" cy="260" r="5" fill="purple"/>
   <circle cx="450" cy="260" r="5" fill="purple"/>
   <text x="165" y="275" font-family="Arial" font-size="12" fill="purple">C₁</text>
   <text x="455" y="275" font-family="Arial" font-size="12" fill="purple">C₂</text>
-  
+
   <!-- Epipolar Lines -->
   <line x1="120" y1="230" x2="220" y2="210" stroke="orange" stroke-width="1.5" stroke-dasharray="3,2"/>
   <line x1="380" y1="210" x2="480" y2="230" stroke="orange" stroke-width="1.5" stroke-dasharray="3,2"/>
   <text x="225" y="210" font-family="Arial" font-size="12" fill="orange">Epipolar Line</text>
   <text x="350" y="210" font-family="Arial" font-size="12" fill="orange">Epipolar Line</text>
-  
+
   <!-- Baseline -->
   <line x1="180" y1="260" x2="450" y2="260" stroke="black" stroke-width="2"/>
   <text x="300" y="280" font-family="Arial" font-size="14" fill="black">Baseline</text>
-  
+
   <!-- Title -->
   <text x="150" y="50" font-family="Arial" font-size="18" font-weight="bold">Triangulation from Multiple Views</text>
-  
+
   <!-- Explanation -->
   <text x="50" y="330" font-family="Arial" font-size="14">
     Triangulation determines the 3D position of point X by finding the intersection
@@ -59,14 +59,14 @@
   <text x="50" y="370" font-family="Arial" font-size="14">
     The epipolar constraint reduces the search space for matching features.
   </text>
-  
+
   <!-- Legend -->
-  <rect x="450" y="320" width="120" height="70" fill="white" stroke="black" stroke-width="1"/>
-  <text x="460" y="335" font-family="Arial" font-size="12" font-weight="bold">Legend</text>
-  
-  <circle cx="470" cy="350" r="5" fill="red"/>
-  <text x="480" y="353" font-family="Arial" font-size="12">3D Point</text>
-  
-  <circle cx="470" cy="370" r="5" fill="blue"/>
-  <text x="480" y="373" font-family="Arial" font-size="12">Image Point</text>
+  <rect x="450" y="100" width="120" height="70" fill="white" stroke="black" stroke-width="1"/>
+  <text x="460" y="115" font-family="Arial" font-size="12" font-weight="bold">Legend</text>
+
+  <circle cx="470" cy="130" r="5" fill="red"/>
+  <text x="480" y="133" font-family="Arial" font-size="12">3D Point</text>
+
+  <circle cx="470" cy="150" r="5" fill="blue"/>
+  <text x="480" y="153" font-family="Arial" font-size="12">Image Point</text>
 </svg>

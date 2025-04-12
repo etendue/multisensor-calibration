@@ -1,12 +1,12 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
-<svg width="600" height="400" xmlns="http://www.w3.org/2000/svg">
+<svg width="600" height="420" xmlns="http://www.w3.org/2000/svg">
   <!-- Vehicle -->
   <rect x="250" y="200" width="100" height="50" fill="lightgray" stroke="black" stroke-width="2"/>
   <circle cx="270" cy="250" r="10" fill="black"/>
   <circle cx="330" cy="250" r="10" fill="black"/>
   <circle cx="270" cy="200" r="10" fill="black"/>
   <circle cx="330" cy="200" r="10" fill="black"/>
-  
+
   <!-- Vehicle Frame -->
   <line x1="300" y1="225" x2="350" y2="225" stroke="red" stroke-width="3"/>
   <line x1="300" y1="225" x2="300" y2="175" stroke="green" stroke-width="3"/>
@@ -15,11 +15,11 @@
   <text x="300" y="170" font-family="Arial" font-size="14" fill="green">Y_V</text>
   <text x="305" y="265" font-family="Arial" font-size="14" fill="blue">Z_V</text>
   <text x="290" y="225" font-family="Arial" font-size="14" font-weight="bold">V</text>
-  
+
   <!-- Camera -->
   <rect x="320" y="180" width="20" height="15" fill="darkblue" stroke="black" stroke-width="1"/>
   <polygon points="340,180 340,195 350,190" fill="darkblue" stroke="black" stroke-width="1"/>
-  
+
   <!-- Camera Frame -->
   <line x1="340" y1="187.5" x2="360" y2="187.5" stroke="blue" stroke-width="2"/>
   <line x1="340" y1="187.5" x2="340" y2="167.5" stroke="red" stroke-width="2"/>
@@ -28,10 +28,10 @@
   <text x="340" y="165" font-family="Arial" font-size="12" fill="red">X_C</text>
   <text x="355" y="202.5" font-family="Arial" font-size="12" fill="green">Y_C</text>
   <text x="330" y="187.5" font-family="Arial" font-size="12" font-weight="bold">C</text>
-  
+
   <!-- IMU -->
   <rect x="270" y="190" width="15" height="15" fill="orange" stroke="black" stroke-width="1"/>
-  
+
   <!-- IMU Frame -->
   <line x1="277.5" y1="197.5" x2="297.5" y2="197.5" stroke="red" stroke-width="2"/>
   <line x1="277.5" y1="197.5" x2="277.5" y2="177.5" stroke="green" stroke-width="2"/>
@@ -40,7 +40,7 @@
   <text x="277.5" y="175" font-family="Arial" font-size="12" fill="green">Y_I</text>
   <text x="262.5" y="212.5" font-family="Arial" font-size="12" fill="blue">Z_I</text>
   <text x="267.5" y="197.5" font-family="Arial" font-size="12" font-weight="bold">I</text>
-  
+
   <!-- World Frame -->
   <line x1="100" y1="300" x2="150" y2="300" stroke="red" stroke-width="3"/>
   <line x1="100" y1="300" x2="100" y2="250" stroke="green" stroke-width="3"/>
@@ -49,40 +49,51 @@
   <text x="100" y="245" font-family="Arial" font-size="14" fill="green">Y_W</text>
   <text x="105" y="340" font-family="Arial" font-size="14" fill="blue">Z_W</text>
   <text x="90" y="300" font-family="Arial" font-size="14" font-weight="bold">W</text>
-  
+
   <!-- Transformation Labels -->
   <path d="M 200,250 C 220,230 250,230 270,250" fill="none" stroke="black" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arrow)"/>
   <text x="210" y="230" font-family="Arial" font-size="14">T_W←V</text>
-  
+
   <path d="M 310,200 C 320,180 330,180 340,200" fill="none" stroke="black" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arrow)"/>
   <text x="315" y="175" font-family="Arial" font-size="14">T_V←C</text>
-  
+
   <path d="M 290,200 C 280,180 270,180 260,200" fill="none" stroke="black" stroke-width="1.5" stroke-dasharray="5,3" marker-end="url(#arrow)"/>
   <text x="260" y="175" font-family="Arial" font-size="14">T_V←I</text>
-  
+
   <!-- Arrow Marker -->
   <defs>
     <marker id="arrow" markerWidth="10" markerHeight="10" refX="9" refY="3" orient="auto" markerUnits="strokeWidth">
       <path d="M0,0 L0,6 L9,3 z" fill="black"/>
     </marker>
   </defs>
-  
+
   <!-- Title -->
   <text x="150" y="50" font-family="Arial" font-size="18" font-weight="bold">Coordinate Frames for Multisensor Calibration</text>
-  
+
   <!-- Legend -->
   <rect x="450" y="50" width="120" height="120" fill="white" stroke="black" stroke-width="1"/>
   <text x="460" y="70" font-family="Arial" font-size="14" font-weight="bold">Legend</text>
-  
+
   <rect x="460" y="80" width="15" height="15" fill="lightgray" stroke="black" stroke-width="1"/>
   <text x="480" y="92" font-family="Arial" font-size="12">Vehicle</text>
-  
+
   <rect x="460" y="100" width="15" height="15" fill="darkblue" stroke="black" stroke-width="1"/>
   <text x="480" y="112" font-family="Arial" font-size="12">Camera</text>
-  
+
   <rect x="460" y="120" width="15" height="15" fill="orange" stroke="black" stroke-width="1"/>
   <text x="480" y="132" font-family="Arial" font-size="12">IMU</text>
-  
+
   <line x1="460" y1="140" x2="475" y2="140" stroke="black" stroke-width="1.5" stroke-dasharray="5,3"/>
   <text x="480" y="142" font-family="Arial" font-size="12">Transformation</text>
+
+  <!-- Explanation -->
+  <text x="50" y="350" font-family="Arial" font-size="14">
+    The diagram shows the relationship between coordinate frames
+  </text>
+  <text x="50" y="370" font-family="Arial" font-size="14">
+    in the multisensor calibration system.
+  </text>
+  <text x="50" y="390" font-family="Arial" font-size="14">
+    Extrinsic calibration determines the transformations
+  </text>
 </svg>
