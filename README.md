@@ -64,7 +64,7 @@ conda install -c conda-forge gtsam
 3. Run the calibration pipeline:
 
 ```bash
-python mcl.py --config config.yaml --data-dir /path/to/your/data
+python calibrate.py --config config.yaml --data-dir /path/to/your/data --output-dir results
 ```
 
 ## Input Data Requirements
@@ -92,6 +92,7 @@ This project is currently in development. See the [task plan](doc/task_plan.md) 
 - [Technical Design Document](doc/tdd.md)
 - [Task Plan](doc/task_plan.md)
 - [Task Definitions](tasks/README.md)
+- [CI Setup](doc/ci_setup.md)
 
 ## License
 
