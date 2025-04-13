@@ -88,6 +88,7 @@ This project is currently in development. See the [task plan](doc/task_plan.md) 
 - [Product Requirements Document](doc/prd.md)
 - [Technical Design Document](doc/tdd.md)
 - [Task Plan](doc/task_plan.md)
+- [Task Definitions](tasks/README.md)
 
 ## License
 
