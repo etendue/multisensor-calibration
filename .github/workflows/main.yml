@@ -41,6 +41,7 @@ jobs:
         python scripts/test_gtsam.py || echo "GTSAM verification failed, some tests may be skipped"
 
     - name: Lint with flake8
+      shell: bash -l {0}
       run: |
         # Only check for critical errors (syntax errors and undefined names)
         flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics || echo "Critical Python errors found!"
@@ -48,6 +49,7 @@ jobs:
         flake8 . --count --exit-zero --max-complexity=15 --max-line-length=127 --statistics
 
     - name: Test with pytest
+      shell: bash -l {0}
       run: |
         # Run tests, skipping those that require GTSAM if it's not available
         pytest tests/ --cov=src/ --cov-report=xml -k "not test_optimization or GTSAM_AVAILABLE"
