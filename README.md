@@ -1,5 +1,8 @@
 # Multisensor Calibration
 
+[![CI](https://github.com/etendue/multisensor-calibration/actions/workflows/main.yml/badge.svg)](https://github.com/etendue/multisensor-calibration/actions/workflows/main.yml)
+[![Code Quality](https://github.com/etendue/multisensor-calibration/actions/workflows/code-quality.yml/badge.svg)](https://github.com/etendue/multisensor-calibration/actions/workflows/code-quality.yml)
+
 A robust, targetless calibration system for autonomous vehicle sensor suites.
 
 ## Overview
