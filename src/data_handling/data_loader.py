@@ -97,15 +97,18 @@ except ImportError:
             print("PyAV is not available for H.264 decoding")
         return None
 
-def read_rosbag(data_path: str) -> Tuple[List[ImageData], List[ImuData], List[WheelEncoderData]]:
+def read_rosbag(data_path: str, load_images: bool = True) -> Tuple[List[ImageData], List[ImuData], List[WheelEncoderData]]:
     """
     Read sensor data from a rosbag file using the platform-independent rosbags library.
 
     Args:
         data_path: Path to the rosbag file or directory.
+        load_images: Whether to load and process image data. Set to False to skip image processing
+                    and save time when only IMU and wheel encoder data are needed.
 
     Returns:
-        A tuple containing lists of image, IMU, and wheel encoder data.
+        A tuple containing lists of image, IMU, and wheel encoder data. If load_images is False,
+        the images list will be empty.
     """
     if not ROSBAGS_AVAILABLE:
         print("Error: rosbags package is required for reading rosbag files.")
@@ -186,89 +189,102 @@ def read_rosbag(data_path: str) -> Tuple[List[ImageData], List[ImuData], List[Wh
             for c in wheel_connections:
                 print(f"  - {c.topic} ({c.msgtype})")
 
-            # Process image messages
-            for connection, timestamp, rawdata in reader.messages(connections=image_connections):
-                msg = reader.deserialize(rawdata, connection.msgtype)
-                # Extract camera ID from topic name
-                camera_id = connection.topic.split('/')[-1]
+            # Process image messages (if requested)
+            if load_images:
+                for connection, timestamp, rawdata in reader.messages(connections=image_connections):
+                    msg = reader.deserialize(rawdata, connection.msgtype)
+                    # Extract camera ID from topic name
+                    camera_id = connection.topic.split('/')[-1]
 
-                # Convert timestamp to seconds
-                ts = timestamp / 1e9  # nanoseconds to seconds
+                    # Convert timestamp to seconds
+                    ts = timestamp / 1e9  # nanoseconds to seconds
 
-                try:
-                    # Handle different image message types
-                    if 'CompressedImage' in connection.msgtype:
-                        if CV2_AVAILABLE:
-                            try:
-                                # Decompress image using OpenCV
-                                # Convert compressed image data to numpy array
-                                np_arr = np.frombuffer(msg.data, np.uint8)
-                                # Decode the compressed image
-                                image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
-                            except Exception as e:
-                                print(f"Error decompressing image: {e}")
-                                # Fallback to placeholder
-                                image = np.zeros((480, 640, 3), dtype=np.uint8)
-                        else:
-                            # OpenCV not available, use placeholder
-                            image = np.zeros((480, 640, 3), dtype=np.uint8)
-
-                    elif 'CompressedVideo' in connection.msgtype:
-                        # Handle sensor_interface_msgs/CompressedVideo with H.264 encoding
-                        try:
-                            # For CompressedVideo, the image data might be in a different field
-                            # Adjust this based on the actual message structure
-                            if hasattr(msg, 'data'):
-                                data_field = msg.data
-                            elif hasattr(msg, 'image'):
-                                data_field = msg.image
-                            elif hasattr(msg, 'compressed_data'):
-                                data_field = msg.compressed_data
-                            else:
-                                # Try to find any field that might contain image data
-                                for field_name in dir(msg):
-                                    if not field_name.startswith('_') and isinstance(getattr(msg, field_name), bytes):
-                                        data_field = getattr(msg, field_name)
-                                        break
-                                else:
-                                    raise AttributeError("Could not find image data field in message")
-
-                            # Print message structure for debugging on first image
-                            if len(images) == 0:
-                                print(f"CompressedVideo message attributes: {dir(msg)}")
-
-                            # Print the first few bytes of the data for debugging
-                            if len(images) == 0:
-                                print(f"First 20 bytes of data: {[b for b in data_field[:20]]}")
-                                print(f"Data length: {len(data_field)} bytes")
-
-                            # Try to decode H.264 video using our specialized function
-                            # Enable debug mode for the first few frames
-                            debug_mode = len(images) < 3  # Only debug the first 3 frames
-                            decoded_image = decode_h264(data_field, debug=debug_mode)
-
-                            if decoded_image is not None:
-                                # Successfully decoded the image
-                                image = decoded_image
-
-                                # For debugging, save the first frame as JPEG
-                                if len(images) < 3 and CV2_AVAILABLE:
-                                    debug_path = f"debug_frame_{len(images)}.jpg"
-                                    print(f"Saving debug frame to {debug_path}")
-                                    _, jpeg_data = cv2.imencode('.jpg', image)
-                                    with open(debug_path, 'wb') as f:
-                                        f.write(jpeg_data)
-
-                                # Print success message for the first few frames
-                                if len(images) < 10:
-                                    print(f"Successfully decoded frame {len(images)}")
-                            else:
-                                # Decoding failed, try with OpenCV as fallback
-                                if CV2_AVAILABLE:
-                                    # Try to decode with OpenCV (might not work for H.264)
-                                    np_arr = np.frombuffer(data_field, np.uint8)
+                    try:
+                        # Handle different image message types
+                        if 'CompressedImage' in connection.msgtype:
+                            if CV2_AVAILABLE:
+                                try:
+                                    # Decompress image using OpenCV
+                                    # Convert compressed image data to numpy array
+                                    np_arr = np.frombuffer(msg.data, np.uint8)
+                                    # Decode the compressed image
                                     image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
-                                    if image is None:
+                                except Exception as e:
+                                    print(f"Error decompressing image: {e}")
+                                    # Fallback to placeholder
+                                    image = np.zeros((480, 640, 3), dtype=np.uint8)
+                            else:
+                                # OpenCV not available, use placeholder
+                                image = np.zeros((480, 640, 3), dtype=np.uint8)
+
+                        elif 'CompressedVideo' in connection.msgtype:
+                            # Handle sensor_interface_msgs/CompressedVideo with H.264 encoding
+                            try:
+                                # For CompressedVideo, the image data might be in a different field
+                                # Adjust this based on the actual message structure
+                                if hasattr(msg, 'data'):
+                                    data_field = msg.data
+                                elif hasattr(msg, 'image'):
+                                    data_field = msg.image
+                                elif hasattr(msg, 'compressed_data'):
+                                    data_field = msg.compressed_data
+                                else:
+                                    # Try to find any field that might contain image data
+                                    found_data = False
+                                    for field_name in dir(msg):
+                                        if not field_name.startswith('_') and isinstance(getattr(msg, field_name), bytes):
+                                            data_field = getattr(msg, field_name)
+                                            found_data = True
+                                            break
+
+                                    if not found_data:
+                                        raise AttributeError("Could not find image data field in message")
+
+                                # Print message structure for debugging on first image
+                                if len(images) == 0:
+                                    print(f"CompressedVideo message attributes: {dir(msg)}")
+
+                                # Print the first few bytes of the data for debugging
+                                if len(images) == 0:
+                                    print(f"First 20 bytes of data: {[b for b in data_field[:20]]}")
+                                    print(f"Data length: {len(data_field)} bytes")
+
+                                # Try to decode H.264 video using our specialized function
+                                # Enable debug mode for the first few frames
+                                debug_mode = len(images) < 3  # Only debug the first 3 frames
+                                decoded_image = decode_h264(data_field, debug=debug_mode)
+
+                                if decoded_image is not None:
+                                    # Successfully decoded the image
+                                    image = decoded_image
+
+                                    # For debugging, save the first frame as JPEG
+                                    if len(images) < 3 and CV2_AVAILABLE:
+                                        debug_path = f"debug_frame_{len(images)}.jpg"
+                                        print(f"Saving debug frame to {debug_path}")
+                                        _, jpeg_data = cv2.imencode('.jpg', image)
+                                        with open(debug_path, 'wb') as f:
+                                            f.write(jpeg_data)
+
+                                    # Print success message for the first few frames
+                                    if len(images) < 10:
+                                        print(f"Successfully decoded frame {len(images)}")
+                                else:
+                                    # Decoding failed, try with OpenCV as fallback
+                                    if CV2_AVAILABLE:
+                                        # Try to decode with OpenCV (might not work for H.264)
+                                        np_arr = np.frombuffer(data_field, np.uint8)
+                                        image = cv2.imdecode(np_arr, cv2.IMREAD_COLOR)
+                                        if image is None:
+                                            # Fallback to placeholder - use a small image to save memory
+                                            image = np.zeros((120, 160, 3), dtype=np.uint8)
+
+                                            # Skip this frame if we're just collecting placeholders
+                                            # This helps us get to I-frames faster
+                                            if len(images) > 0 and len(images) % 10 != 0:
+                                                # Skip this frame (only keep 1 in 10 placeholders)
+                                                continue
+                                    else:
                                         # Fallback to placeholder - use a small image to save memory
                                         image = np.zeros((120, 160, 3), dtype=np.uint8)
 
@@ -277,51 +293,42 @@ def read_rosbag(data_path: str) -> Tuple[List[ImageData], List[ImuData], List[Wh
                                         if len(images) > 0 and len(images) % 10 != 0:
                                             # Skip this frame (only keep 1 in 10 placeholders)
                                             continue
+                            except Exception as e:
+                                print(f"Error processing CompressedVideo: {e}")
+                                # Print message structure for debugging
+                                print(f"Message attributes: {dir(msg)}")
+                                # Fallback to placeholder
+                                image = np.zeros((480, 640, 3), dtype=np.uint8)
+
+                        else:
+                            # For uncompressed images, extract the data
+                            try:
+                                # Get image dimensions
+                                height = msg.height
+                                width = msg.width
+                                # Get encoding (e.g., 'rgb8', 'bgr8', 'mono8')
+                                encoding = msg.encoding
+
+                                # Convert raw data to numpy array
+                                if 'mono' in encoding.lower():
+                                    # Grayscale image
+                                    image = np.frombuffer(msg.data, dtype=np.uint8).reshape(height, width)
                                 else:
-                                    # Fallback to placeholder - use a small image to save memory
-                                    image = np.zeros((120, 160, 3), dtype=np.uint8)
+                                    # Color image (assuming 3 channels)
+                                    channels = 3
+                                    image = np.frombuffer(msg.data, dtype=np.uint8).reshape(height, width, channels)
 
-                                    # Skip this frame if we're just collecting placeholders
-                                    # This helps us get to I-frames faster
-                                    if len(images) > 0 and len(images) % 10 != 0:
-                                        # Skip this frame (only keep 1 in 10 placeholders)
-                                        continue
-                        except Exception as e:
-                            print(f"Error processing CompressedVideo: {e}")
-                            # Print message structure for debugging
-                            print(f"Message attributes: {dir(msg)}")
-                            # Fallback to placeholder
-                            image = np.zeros((480, 640, 3), dtype=np.uint8)
-
-                    else:
-                        # For uncompressed images, extract the data
-                        try:
-                            # Get image dimensions
-                            height = msg.height
-                            width = msg.width
-                            # Get encoding (e.g., 'rgb8', 'bgr8', 'mono8')
-                            encoding = msg.encoding
-
-                            # Convert raw data to numpy array
-                            if 'mono' in encoding.lower():
-                                # Grayscale image
-                                image = np.frombuffer(msg.data, dtype=np.uint8).reshape(height, width)
-                            else:
-                                # Color image (assuming 3 channels)
-                                channels = 3
-                                image = np.frombuffer(msg.data, dtype=np.uint8).reshape(height, width, channels)
-
-                                # Convert to BGR if needed (OpenCV default format)
-                                if CV2_AVAILABLE and 'rgb' in encoding.lower():
-                                    image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
-                        except Exception as e:
-                            print(f"Error processing image: {e}")
-                            # Fallback to placeholder
-                            image = np.zeros((480, 640, 3), dtype=np.uint8)
-                except Exception as e:
-                    print(f"Error processing image message: {e}")
-                    # Fallback to placeholder
-                    image = np.zeros((480, 640, 3), dtype=np.uint8)
+                                    # Convert to BGR if needed (OpenCV default format)
+                                    if CV2_AVAILABLE and 'rgb' in encoding.lower():
+                                        image = cv2.cvtColor(image, cv2.COLOR_RGB2BGR)
+                            except Exception as e:
+                                print(f"Error processing image: {e}")
+                                # Fallback to placeholder
+                                image = np.zeros((480, 640, 3), dtype=np.uint8)
+                    except Exception as e:
+                        print(f"Error processing image message: {e}")
+                        # Fallback to placeholder
+                        image = np.zeros((480, 640, 3), dtype=np.uint8)
 
                 images.append(ImageData(ts, camera_id, image))
 
@@ -558,16 +565,19 @@ def read_rosbag(data_path: str) -> Tuple[List[ImageData], List[ImuData], List[Wh
     return images, imu_data, wheel_data
 
 
-def load_and_synchronize_data(data_path: str) -> Tuple[List[ImageData], List[ImuData], List[WheelEncoderData]]:
+def load_and_synchronize_data(data_path: str, load_images: bool = True) -> Tuple[List[ImageData], List[ImuData], List[WheelEncoderData]]:
     """
     Loads sensor data from storage and aligns it based on timestamps.
 
     Args:
         data_path: Path to the directory containing sensor data files or a rosbag file.
+        load_images: Whether to load and process image data. Set to False to skip image processing
+                    and save time when only IMU and wheel encoder data are needed.
 
     Returns:
         A tuple containing lists of synchronized image, IMU, and wheel encoder data.
         Synchronization might involve interpolation or selecting nearest neighbors in time.
+        If load_images is False, the images list will be empty.
     """
     print(f"Loading and synchronizing data from: {data_path}")
 
@@ -577,7 +587,7 @@ def load_and_synchronize_data(data_path: str) -> Tuple[List[ImageData], List[Imu
     # If it's a file and has a .bag extension, try to read it as a rosbag
     if path.is_file() and path.suffix == '.bag':
         if ROSBAGS_AVAILABLE:
-            images, imu_data, wheel_data = read_rosbag(data_path)
+            images, imu_data, wheel_data = read_rosbag(data_path, load_images=load_images)
             if images or imu_data or wheel_data:  # If we got any data
                 # Perform synchronization
                 return synchronize_sensor_data(images, imu_data, wheel_data)
@@ -589,7 +599,7 @@ def load_and_synchronize_data(data_path: str) -> Tuple[List[ImageData], List[Imu
     # If it's a directory, check if it contains a rosbag2 database
     elif path.is_dir() and any(p.suffix == '.db3' for p in path.glob('*')):
         if ROSBAGS_AVAILABLE:
-            images, imu_data, wheel_data = read_rosbag(data_path)
+            images, imu_data, wheel_data = read_rosbag(data_path, load_images=load_images)
             if images or imu_data or wheel_data:  # If we got any data
                 # Perform synchronization
                 return synchronize_sensor_data(images, imu_data, wheel_data)

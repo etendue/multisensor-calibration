@@ -54,10 +54,17 @@ def estimate_initial_ego_motion(imu_data: List[ImuData], wheel_data: List[WheelE
         'wheel_radius': 0.3,  # meters (example value, should be configured)
         'track_width': axle_length,  # meters
         'wheelbase': 2.7,  # meters (example value, should be configured)
-        'model': 'differential',  # vehicle model
-        'using_positions': True,  # whether wheel_speeds contains positions or speeds
+        'using_positions': False,  # we're using wheel speeds, not positions
         'encoder_ticks_per_revolution': 131072  # encoder resolution
     }
+
+    # Check if wheel angle data is available
+    if hasattr(wheel_data[0], 'wheel_angles') and wheel_data[0].wheel_angles is not None:
+        print("Wheel angle data is available, using Ackermann advanced model")
+        vehicle_params['model'] = 'ackermann_advanced'
+    else:
+        print("No wheel angle data available, using differential model")
+        vehicle_params['model'] = 'differential'
 
     if use_ekf:
         # Use EKF for sensor fusion

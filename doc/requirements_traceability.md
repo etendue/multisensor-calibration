@@ -45,10 +45,11 @@ This document establishes traceability between requirements defined in the Produ
 **Tasks**:
 - T1.3: Implement data loader for ROS bags (Completed)
 - T1.3.2.1: Implement MLAImu coordinate system conversion (Completed)
+- T1.3.3: Parse Wheel Encoder messages (Completed)
 
 **Status**: Implemented
 
-**Notes**: The data loader supports ROS bag files and can extract camera images, IMU data, and wheel encoder data (including wheel speeds, positions, and angles). It also handles data synchronization. For MLAImu data, a coordinate system conversion is applied to transform from the legacy right-handed system (forward Y, right X, up Z) to the project's left-handed system (X forward, Y left, Z up).
+**Notes**: The data loader supports ROS bag files and can extract camera images, IMU data, and wheel encoder data (including wheel speeds, positions, and angles). It also handles data synchronization. For MLAImu data, a coordinate system conversion is applied to transform from the legacy right-handed system (forward Y, right X, up Z) to the project's left-handed system (X forward, Y left, Z up). For wheel encoder data, the system supports both wheel speed and wheel angle data, enabling advanced vehicle motion models.
 
 ### FR2: Calibration Scope
 
@@ -164,6 +165,30 @@ This document establishes traceability between requirements defined in the Produ
 **Status**: Implemented
 
 **Notes**: The validation tools include reprojection error calculation, visualization of camera poses and trajectories, and optimization progress visualization. These tools help users evaluate the accuracy and reliability of the calibration.
+
+### Wheel Odometry Models
+
+**Requirement**: The system must support different vehicle models for wheel odometry calculation to accommodate various vehicle types and available sensor data.
+
+**Implementation Artifacts**:
+- `src/motion_estimation/wheel_odometry.py`: Implements different vehicle models for wheel odometry
+- `src/motion_estimation/ego_motion.py`: Selects the appropriate model based on available data
+
+**Test Artifacts**:
+- `scripts/test_trajectory_estimation.py`: Tests for trajectory estimation using wheel odometry
+
+**Tasks**:
+- T2.1: Implement wheel odometry calculation module (Completed)
+- T5.1.1: Fix result extraction in `extract_optimized_values` (Completed)
+
+**Status**: Implemented
+
+**Notes**: The system supports three vehicle models for wheel odometry:
+1. Differential Drive: Uses left and right wheel speeds to calculate vehicle motion
+2. Standard Ackermann: Uses wheel speeds and a single steering angle
+3. Advanced Ackermann: Uses wheel speeds and individual wheel angles for higher accuracy
+
+The system automatically selects the most appropriate model based on the available data. If wheel angle data is available, the Advanced Ackermann model is used. If only steering angle data is available, the Standard Ackermann model is used. If neither is available, the Differential Drive model is used as a fallback.
 
 ## How to Maintain This Document
 

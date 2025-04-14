@@ -231,26 +231,32 @@ class WheelOdometry:
 
         # Calculate turning radius to the center of the rear axle
         R = self.wheelbase / np.tan(abs(effective_angle))
+        print(f"Turning radius: {R:.2f} meters, effective_angle: {effective_angle:.6f} radians")
 
         # Calculate angular velocity around ICR
         v_rear = (wheel_speeds[2] + wheel_speeds[3]) / 2.0  # Average of rear wheels
         omega = v_rear / R
         if effective_angle < 0:
             omega = -omega  # Adjust sign based on steering direction
+        print(f"v_rear: {v_rear:.2f} m/s, omega: {omega:.6f} rad/s")
 
         # Calculate displacement
         dtheta = omega * dt
+        print(f"dt: {dt:.6f} seconds, dtheta: {dtheta:.6f} radians")
 
         # For small angular displacements, we can approximate:
         if abs(dtheta) < 1e-3:
             dx = v_rear * dt
             dy = 0.0
+            print(f"Small angular displacement: dx={dx:.6f}, dy={dy:.6f}, dtheta={dtheta:.6f}")
         else:
             # For larger angular displacements, calculate the chord length
             dx = R * np.sin(dtheta)
             dy = R * (1 - np.cos(dtheta))
             if effective_angle < 0:
                 dy = -dy  # Adjust sign based on steering direction
+            print(f"Large angular displacement: dx={dx:.6f}, dy={dy:.6f}, dtheta={dtheta:.6f}, R={R:.2f}, v_rear={v_rear:.2f}, dt={dt:.4f}")
+            print(f"sin(dtheta): {np.sin(dtheta):.10f}, 1-cos(dtheta): {1-np.cos(dtheta):.10f}")
 
         return dx, dy, dtheta
 
@@ -266,18 +272,24 @@ class WheelOdometry:
         Returns:
             Tuple of (dx, dy, dtheta) representing vehicle motion in vehicle frame
         """
+        print(f"Using model: {self.model}")
         if self.model == 'differential':
+            print("Using differential drive model")
             return self.update_differential_drive(wheel_data, prev_wheel_data)
         elif self.model == 'ackermann':
+            print("Using Ackermann model")
             # Check if wheel angle data is available for advanced Ackermann model
             if hasattr(wheel_data, 'wheel_angles') and wheel_data.wheel_angles is not None:
                 # Use the advanced model that leverages wheel angle data
+                print("Using advanced Ackermann model with wheel angles")
                 return self.update_ackermann_advanced(wheel_data, prev_wheel_data)
             else:
                 # Fall back to the standard model with provided steering angle
+                print("Using standard Ackermann model with steering angle")
                 return self.update_ackermann(wheel_data, steering_angle, prev_wheel_data)
         elif self.model == 'ackermann_advanced':
             # Explicitly request the advanced model
+            print("Using advanced Ackermann model explicitly")
             return self.update_ackermann_advanced(wheel_data, prev_wheel_data)
         else:
             raise ValueError(f"Unsupported vehicle model: {self.model}")
@@ -306,6 +318,11 @@ class WheelOdometry:
         # Rotate displacement to world frame
         dx_world = dx * cos_theta - dy * sin_theta
         dy_world = dx * sin_theta + dy * cos_theta
+
+        # Print debug information
+        print(f"Vehicle frame: dx={dx:.6f}, dy={dy:.6f}, dtheta={dtheta:.6f}")
+        print(f"World frame: dx_world={dx_world:.6f}, dy_world={dy_world:.6f}")
+        print(f"Current position: [{current_pose.translation[0]:.6f}, {current_pose.translation[1]:.6f}, {current_pose.translation[2]:.6f}]")
 
         # Update position
         new_translation = current_pose.translation.copy()

@@ -5,9 +5,9 @@
 
 ## Project Progress
 
-`[███████████████████████▒▒]` 82% Complete
+`[████████████████████████▒]` 85% Complete
 
-✓ Completed: 43 tasks | 🔄 In Progress: 0 tasks | ⬜ Remaining: 9 tasks
+✓ Completed: 44 tasks | 🔄 In Progress: 0 tasks | ⬜ Remaining: 8 tasks
 
 ## Phases & Tasks
 
@@ -63,7 +63,7 @@
 ### Phase 5: Integration, Validation & Documentation (~2-3 weeks)
 
 - ✓ **T5.1:** Integrate optimization backend into the main pipeline script.
-  - ⬜ **T5.1.1:** Fix result extraction in `extract_optimized_values` to handle different GTSAM versions and return types.
+  - ✓ **T5.1.1:** Fix result extraction in `extract_optimized_values` to handle different GTSAM versions and return types.
 - ✓ **T5.2:** Develop validation tools:
   - ✓ **T5.2.1:** Calculate final RMS reprojection error.
   - ✓ **T5.2.2:** Implement visualization (e.g., plot trajectory, project points into images).
