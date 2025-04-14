@@ -347,14 +347,18 @@ def read_rosbag(data_path: str) -> Tuple[List[ImageData], List[ImuData], List[Wh
 
                                 # Extract gyro (angular velocity) data
                                 if hasattr(imu_basic, 'gyrox') and hasattr(imu_basic, 'gyroy') and hasattr(imu_basic, 'gyroz'):
-                                    angular_velocity = np.array([imu_basic.gyrox, imu_basic.gyroy, imu_basic.gyroz])
+                                    # MLAImu uses right-handed coordinate system (forward Y, right X, up Z)
+                                    # Need to convert to left-handed system (X forward, Y left, Z up)
+                                    # Conversion: X_new = Y_old, Y_new = -X_old, Z_new = Z_old
+                                    angular_velocity = np.array([imu_basic.gyroy, -imu_basic.gyrox, imu_basic.gyroz])
                                 else:
                                     print("Warning: Could not find gyro data in imu_data_basic")
                                     angular_velocity = np.zeros(3)
 
                                 # Extract accelerometer data
                                 if hasattr(imu_basic, 'accx') and hasattr(imu_basic, 'accy') and hasattr(imu_basic, 'accz'):
-                                    linear_acceleration = np.array([imu_basic.accx, imu_basic.accy, imu_basic.accz])
+                                    # Apply the same coordinate transformation for accelerometer data
+                                    linear_acceleration = np.array([imu_basic.accy, -imu_basic.accx, imu_basic.accz])
                                 else:
                                     print("Warning: Could not find acceleration data in imu_data_basic")
                                     linear_acceleration = np.zeros(3)
@@ -362,14 +366,18 @@ def read_rosbag(data_path: str) -> Tuple[List[ImageData], List[ImuData], List[Wh
                                 # Standard field names
                                 ang_vel = msg.angular_velocity
                                 lin_acc = msg.linear_acceleration
-                                angular_velocity = np.array([ang_vel.x, ang_vel.y, ang_vel.z])
-                                linear_acceleration = np.array([lin_acc.x, lin_acc.y, lin_acc.z])
+
+                                # Apply coordinate transformation for MLAImu
+                                angular_velocity = np.array([ang_vel.y, -ang_vel.x, ang_vel.z])
+                                linear_acceleration = np.array([lin_acc.y, -lin_acc.x, lin_acc.z])
                             elif hasattr(msg, 'gyro') and hasattr(msg, 'accel'):
                                 # Alternative field names
                                 ang_vel = msg.gyro
                                 lin_acc = msg.accel
-                                angular_velocity = np.array([ang_vel.x, ang_vel.y, ang_vel.z])
-                                linear_acceleration = np.array([lin_acc.x, lin_acc.y, lin_acc.z])
+
+                                # Apply coordinate transformation for MLAImu
+                                angular_velocity = np.array([ang_vel.y, -ang_vel.x, ang_vel.z])
+                                linear_acceleration = np.array([lin_acc.y, -lin_acc.x, lin_acc.z])
                             else:
                                 # Try to find any vector3 fields that might contain the data
                                 ang_vel = None
@@ -387,13 +395,18 @@ def read_rosbag(data_path: str) -> Tuple[List[ImageData], List[ImuData], List[Wh
 
                                 # If we found the fields, extract the data
                                 if ang_vel is not None and lin_acc is not None:
-                                    angular_velocity = np.array([ang_vel.x, ang_vel.y, ang_vel.z])
-                                    linear_acceleration = np.array([lin_acc.x, lin_acc.y, lin_acc.z])
+                                    # Apply coordinate transformation for MLAImu
+                                    angular_velocity = np.array([ang_vel.y, -ang_vel.x, ang_vel.z])
+                                    linear_acceleration = np.array([lin_acc.y, -lin_acc.x, lin_acc.z])
                                 else:
                                     # Fallback to zeros
                                     print(f"Warning: Could not find angular velocity and linear acceleration in MLAImu message")
                                     angular_velocity = np.zeros(3)
                                     linear_acceleration = np.zeros(3)
+
+                            # Print coordinate transformation info on first message
+                            if len(imu_data) == 0:
+                                print("Note: MLAImu data converted from right-handed (forward Y, right X, up Z) to left-handed (X forward, Y left, Z up) coordinate system")
                         except Exception as e:
                             print(f"Error processing MLAImu: {e}")
                             # Fallback to zeros

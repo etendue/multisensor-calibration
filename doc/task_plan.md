@@ -7,7 +7,7 @@
 
 `[███████████████████████▒▒]` 82% Complete
 
-✓ Completed: 42 tasks | 🔄 In Progress: 0 tasks | ⬜ Remaining: 9 tasks
+✓ Completed: 43 tasks | 🔄 In Progress: 0 tasks | ⬜ Remaining: 9 tasks
 
 ## Phases & Tasks
 
@@ -18,6 +18,7 @@
 - ✓ **T1.3:** Implement data loader for ROS bags (or other chosen format).
   - ✓ **T1.3.1:** Parse Image messages.
   - ✓ **T1.3.2:** Parse IMU messages.
+    - ✓ **T1.3.2.1:** Implement MLAImu coordinate system conversion.
   - ✓ **T1.3.3:** Parse Wheel Encoder messages (custom format or standard Odom).
 - ✓ **T1.4:** Implement sensor data synchronization module (interpolation/nearest neighbor).
 - ✓ **T1.5:** Implement configuration file parser (YAML).

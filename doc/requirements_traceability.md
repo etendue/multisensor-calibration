@@ -44,10 +44,11 @@ This document establishes traceability between requirements defined in the Produ
 
 **Tasks**:
 - T1.3: Implement data loader for ROS bags (Completed)
+- T1.3.2.1: Implement MLAImu coordinate system conversion (Completed)
 
 **Status**: Implemented
 
-**Notes**: The data loader supports ROS bag files and can extract camera images, IMU data, and wheel encoder data. It also handles data synchronization.
+**Notes**: The data loader supports ROS bag files and can extract camera images, IMU data, and wheel encoder data. It also handles data synchronization. For MLAImu data, a coordinate system conversion is applied to transform from the legacy right-handed system (forward Y, right X, up Z) to the project's left-handed system (X forward, Y left, Z up).
 
 ### FR2: Calibration Scope
 
@@ -112,7 +113,7 @@ This document establishes traceability between requirements defined in the Produ
 
 **Status**: Implemented
 
-**Notes**: The system uses a vehicle-centric coordinate system with origin at the center of the rear axle.
+**Notes**: The system uses a vehicle-centric coordinate system with origin at the center of the rear axle. The coordinate system is left-handed with X forward, Y left, and Z up. Sensor data from different sources (like MLAImu) is converted to this consistent coordinate system.
 
 ### FR6: Input Assumptions
 
