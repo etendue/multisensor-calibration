@@ -17,7 +17,7 @@ This document establishes traceability between requirements defined in the Produ
 | FR5 | Coordinate System | src/data_structures.py | tests/test_data_structures.py | Implemented |
 | FR6 | Input Assumptions | src/data_handling/config_parser.py | tests/test_config_parser.py | Implemented |
 | FR7 | Output | src/optimization/bundle_adjustment.py<br>src/validation/metrics.py | tests/test_optimization.py | Implemented |
-| FR8 | Validation | src/validation/metrics.py<br>src/validation/__init__.py | tests/test_validation.py<br>tests/test_validation_tools.py | Implemented |
+| FR8 | Validation | src/validation/metrics.py<br>src/validation/__init__.py | tests/test_validation.py | Implemented |
 
 ### Non-Functional Requirements
 
@@ -152,8 +152,7 @@ This document establishes traceability between requirements defined in the Produ
 - `src/validation/__init__.py`: Package initialization for validation tools
 
 **Test Artifacts**:
-- `tests/test_validation.py`: Tests for validation metrics
-- `tests/test_validation_tools.py`: Tests for validation visualization tools
+- `tests/test_validation.py`: Comprehensive tests for validation metrics and visualization tools
 
 **Tasks**:
 - T5.2: Develop validation tools (Completed)

@@ -1,5 +1,6 @@
 #!/usr/bin/env python3
 # Test script for optimization backend integration
+# Merged version of test_optimization_integration.py and test_optimization_integration_simple.py
 import os
 import sys
 import numpy as np
@@ -102,6 +103,22 @@ def main():
             factor_graph, initial_values, variable_index, config=optimization_config
         )
         print("\nOptimization successful!")
+
+        # Print optimization progress summary
+        if optimization_progress:
+            total_error_reduction = (
+                optimization_progress['total_errors'][0] - optimization_progress['total_errors'][-1]
+            ) / optimization_progress['total_errors'][0] * 100
+
+            reproj_error_reduction = (
+                optimization_progress['reprojection_errors'][0] - optimization_progress['reprojection_errors'][-1]
+            ) / optimization_progress['reprojection_errors'][0] * 100
+
+            print(f"\nOptimization Progress Summary:")
+            print(f"  Total iterations: {len(optimization_progress['iterations'])}")
+            print(f"  Total error reduction: {total_error_reduction:.1f}%")
+            print(f"  Reprojection error reduction: {reproj_error_reduction:.1f}%")
+            print(f"  Total time: {optimization_progress['times'][-1]:.2f} seconds")
     else:
         print("GTSAM is not available. Skipping optimization.")
         optimized_values = initial_values
