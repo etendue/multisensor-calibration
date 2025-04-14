@@ -90,6 +90,7 @@ This project is currently in development. See the [task plan](doc/task_plan.md) 
 
 - [Product Requirements Document](doc/prd.md)
 - [Technical Design Document](doc/tdd.md)
+- [Requirements Traceability Matrix](doc/requirements_traceability.md)
 - [Task Plan](doc/task_plan.md)
 - [Task Definitions](tasks/README.md)
 - [CI Setup](doc/ci_setup.md)

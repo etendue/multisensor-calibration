@@ -1,4 +1,5 @@
 # Validation metrics module
+# Implements FR8: Validation - Tools to assess the quality of the calibration
 from typing import Dict, List, Tuple, Optional
 import numpy as np
 import plotly.graph_objects as go

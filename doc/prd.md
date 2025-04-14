@@ -90,7 +90,13 @@ Code should be well-structured, commented, and adhere to standard Python practic
 - **SC3**: Calibration results demonstrably improve the performance of downstream tasks (e.g., SLAM, object detection) compared to using initial guesses.
 - **SC4**: Positive feedback from target users (U1, U2) regarding usability and reliability.
 
-## 7. Future Considerations
+## 7. Requirement Traceability
+
+A Requirements Traceability Matrix (RTM) has been established to track the implementation of each requirement. The RTM maps requirements to implementation artifacts (source code files), test artifacts, and tracks the implementation status.
+
+See [Requirements Traceability Matrix](requirements_traceability.md) for details.
+
+## 8. Future Considerations
 
 - Online/real-time calibration capabilities.
 - Support for additional sensor types (e.g., LiDAR, Radar).
