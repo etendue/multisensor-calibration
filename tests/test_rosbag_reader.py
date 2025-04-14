@@ -46,6 +46,8 @@ def main():
         print(f"    First timestamp: {wheel_data[0].timestamp:.3f}s")
         print(f"    Last timestamp: {wheel_data[-1].timestamp:.3f}s")
         print(f"    Sample wheel speeds: {wheel_data[0].wheel_speeds}")
+        if hasattr(wheel_data[0], 'wheel_angles') and wheel_data[0].wheel_angles is not None:
+            print(f"    Sample wheel angles: {wheel_data[0].wheel_angles}")
 
     print("\nTest completed.")
 

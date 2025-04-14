@@ -58,7 +58,7 @@ python -m tests.test_rosbag_reader --input /path/to/your/bagfile.bag
 
 ## Limitations and Future Improvements
 
-1. **Wheel Encoder Data Conversion**: The current implementation makes assumptions about how to convert odometry/twist messages to wheel speeds. This may need to be adapted based on the specific robot model.
+1. **Wheel Encoder Data Conversion**: The current implementation makes assumptions about how to convert odometry/twist messages to wheel speeds and angles. This may need to be adapted based on the specific robot model.
 
 2. **Advanced Synchronization**: The current synchronization is basic (sorting by timestamp). Future improvements could include interpolation or more sophisticated methods.
 

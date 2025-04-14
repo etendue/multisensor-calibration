@@ -25,10 +25,12 @@ class ImuData(TimestampedData):
 
 class WheelEncoderData(TimestampedData):
     """Represents wheel encoder data (e.g., ticks or speed) for all wheels."""
-    def __init__(self, timestamp: float, wheel_speeds: np.ndarray):
+    def __init__(self, timestamp: float, wheel_speeds: np.ndarray, wheel_angles: np.ndarray = None):
         super().__init__(timestamp)
-        # Example: [speed_fl, speed_fr, speed_rl, speed_rr]
+        # Example: [speed_fl, speed_fr, speed_rl, speed_rr] in meters per second
         self.wheel_speeds = wheel_speeds
+        # Example: [angle_fl, angle_fr, angle_rl, angle_rr] in radians
+        self.wheel_angles = wheel_angles if wheel_angles is not None else np.zeros(4)
 
 class CameraIntrinsics:
     """Represents camera intrinsic parameters."""
@@ -84,7 +86,7 @@ class VehiclePose(TimestampedData):
         self.T = np.eye(4)  # Transformation matrix from vehicle frame to world frame
         self.T[0:3, 0:3] = rotation
         self.T[0:3, 3] = translation.flatten()
-        
+
     @property
     def transform_inverse(self) -> np.ndarray:
         """Get the inverse transformation matrix (from world to vehicle frame)."""
@@ -94,13 +96,13 @@ class VehiclePose(TimestampedData):
         T_inv[0:3, 0:3] = R_inv
         T_inv[0:3, 3] = t_inv.flatten()
         return T_inv
-        
+
     def transform_point(self, point: np.ndarray) -> np.ndarray:
         """Transform a 3D point using this pose's transformation.
-        
+
         Args:
             point: 3D point as (x, y, z)
-            
+
         Returns:
             Transformed point as (x, y, z)
         """
@@ -111,13 +113,13 @@ class VehiclePose(TimestampedData):
         transformed_h = self.T @ point_h
         # Convert back to 3D
         return transformed_h[:3]
-        
+
     def transform_point_inverse(self, point: np.ndarray) -> np.ndarray:
         """Transform a 3D point using the inverse of this pose's transformation.
-        
+
         Args:
             point: 3D point as (x, y, z)
-            
+
         Returns:
             Transformed point as (x, y, z)
         """

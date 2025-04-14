@@ -139,10 +139,16 @@ Propagate state from $k$ to $k+1$ using IMU measurements $\omega_m$, $a_m$ betwe
 ### Update Step (Wheel Odometry Measurement)
 Correct the predicted state using wheel odometry measurement $z_k$.
 
-- Vehicle Motion Model (Example: Differential Drive):
-  - $v = \frac{\text{speed}_r + \text{speed}_l}{2}$ (average wheel speed)
-  - $\omega_z = \frac{\text{speed}_r - \text{speed}_l}{\text{track}\text{\textunderscore}\text{width}}$ (yaw rate)
-  - Measurement $z_k$ could be $[v, \omega_z]$.
+- Vehicle Motion Models:
+  - Differential Drive:
+    - $v = \frac{\text{speed}_r + \text{speed}_l}{2}$ (average wheel speed)
+    - $\omega_z = \frac{\text{speed}_r - \text{speed}_l}{\text{track}\text{\textunderscore}\text{width}}$ (yaw rate)
+    - Measurement $z_k$ could be $[v, \omega_z]$
+  - Ackermann Steering:
+    - Uses wheel speeds and steering angle or wheel angles
+    - For wheel angles, front wheel angles provide steering information
+    - Rear wheel angles are typically ~0
+    - More accurate motion estimation with actual wheel angles
 
 - Measurement Prediction: $\hat{z} = h(x_{k+1|k})$. Predict expected $v$ and $\omega_z$ from the EKF state (e.g., $v$ from $v_x$, $v_y$, $\omega_z$ from quaternion derivative or gyro bias).
 

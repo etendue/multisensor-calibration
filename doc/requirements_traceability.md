@@ -48,7 +48,7 @@ This document establishes traceability between requirements defined in the Produ
 
 **Status**: Implemented
 
-**Notes**: The data loader supports ROS bag files and can extract camera images, IMU data, and wheel encoder data. It also handles data synchronization. For MLAImu data, a coordinate system conversion is applied to transform from the legacy right-handed system (forward Y, right X, up Z) to the project's left-handed system (X forward, Y left, Z up).
+**Notes**: The data loader supports ROS bag files and can extract camera images, IMU data, and wheel encoder data (including wheel speeds, positions, and angles). It also handles data synchronization. For MLAImu data, a coordinate system conversion is applied to transform from the legacy right-handed system (forward Y, right X, up Z) to the project's left-handed system (X forward, Y left, Z up).
 
 ### FR2: Calibration Scope
 

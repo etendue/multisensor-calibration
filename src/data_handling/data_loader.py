@@ -440,8 +440,28 @@ def read_rosbag(data_path: str) -> Tuple[List[ImageData], List[ImuData], List[Wh
                             # Based on the provided message structure, we need to extract wheel data
                             # We have multiple options: wheel_position_report, wheel_speed_report, wheel_angle_report
 
-                            # First, try to get wheel position data (encoder values)
-                            if hasattr(msg, 'wheel_position_report') and hasattr(msg.wheel_position_report, 'wheel_position_report_data'):
+                            # Initialize wheel_speeds and wheel_angles as None
+                            wheel_speeds = None
+                            wheel_angles = None
+
+                            # First, try to get wheel speed data from wheel_speed_report (preferred method)
+                            if hasattr(msg, 'wheel_speed_report') and hasattr(msg.wheel_speed_report, 'wheel_speed_report_data'):
+                                speed_data = msg.wheel_speed_report.wheel_speed_report_data
+                                # Check if we have the mps (meters per second) fields - these are preferred
+                                if hasattr(speed_data, 'front_left_mps') and hasattr(speed_data, 'front_right_mps') and \
+                                   hasattr(speed_data, 'rear_left_mps') and hasattr(speed_data, 'rear_right_mps'):
+                                    wheel_speeds = np.array([speed_data.front_left_mps, speed_data.front_right_mps,
+                                                           speed_data.rear_left_mps, speed_data.rear_right_mps])
+                                    print(f"Using wheel speed data (mps): {wheel_speeds}")
+                                # Otherwise use the regular speed fields
+                                elif hasattr(speed_data, 'front_left') and hasattr(speed_data, 'front_right') and \
+                                     hasattr(speed_data, 'rear_left') and hasattr(speed_data, 'rear_right'):
+                                    wheel_speeds = np.array([speed_data.front_left, speed_data.front_right,
+                                                           speed_data.rear_left, speed_data.rear_right])
+                                    print(f"Using wheel speed data: {wheel_speeds}")
+
+                            # If wheel_speeds is still None, try to get wheel position data (encoder values)
+                            if wheel_speeds is None and hasattr(msg, 'wheel_position_report') and hasattr(msg.wheel_position_report, 'wheel_position_report_data'):
                                 pos_data = msg.wheel_position_report.wheel_position_report_data
                                 if hasattr(pos_data, 'front_left') and hasattr(pos_data, 'front_right') and \
                                    hasattr(pos_data, 'rear_left') and hasattr(pos_data, 'rear_right'):
@@ -452,32 +472,19 @@ def read_rosbag(data_path: str) -> Tuple[List[ImageData], List[ImuData], List[Wh
                                     wheel_speeds = wheel_positions
                                     print(f"Using wheel position data: {wheel_positions}")
 
-                            # If position data not available or invalid, try wheel speed data
-                            if 'wheel_speeds' not in locals() or wheel_speeds is None:
-                                if hasattr(msg, 'wheel_speed_report') and hasattr(msg.wheel_speed_report, 'wheel_speed_report_data'):
-                                    speed_data = msg.wheel_speed_report.wheel_speed_report_data
-                                    # Check if we have the mps (meters per second) fields
-                                    if hasattr(speed_data, 'front_left_mps') and hasattr(speed_data, 'front_right_mps') and \
-                                       hasattr(speed_data, 'rear_left_mps') and hasattr(speed_data, 'rear_right_mps'):
-                                        wheel_speeds = np.array([speed_data.front_left_mps, speed_data.front_right_mps,
-                                                               speed_data.rear_left_mps, speed_data.rear_right_mps])
-                                        print(f"Using wheel speed data (mps): {wheel_speeds}")
-                                    # Otherwise use the regular speed fields
-                                    elif hasattr(speed_data, 'front_left') and hasattr(speed_data, 'front_right') and \
-                                         hasattr(speed_data, 'rear_left') and hasattr(speed_data, 'rear_right'):
-                                        wheel_speeds = np.array([speed_data.front_left, speed_data.front_right,
-                                                               speed_data.rear_left, speed_data.rear_right])
-                                        print(f"Using wheel speed data: {wheel_speeds}")
+                            # Get wheel angle data from wheel_angle_report
+                            if hasattr(msg, 'wheel_angle_report') and hasattr(msg.wheel_angle_report, 'wheel_angle_report_data'):
+                                angle_data = msg.wheel_angle_report.wheel_angle_report_data
+                                if hasattr(angle_data, 'front_left') and hasattr(angle_data, 'front_right') and \
+                                   hasattr(angle_data, 'rear_left') and hasattr(angle_data, 'rear_right'):
+                                    wheel_angles = np.array([angle_data.front_left, angle_data.front_right,
+                                                           angle_data.rear_left, angle_data.rear_right])
+                                    print(f"Using wheel angle data: {wheel_angles}")
 
-                            # If neither position nor speed data is available, try wheel angle data
-                            if 'wheel_speeds' not in locals() or wheel_speeds is None:
-                                if hasattr(msg, 'wheel_angle_report') and hasattr(msg.wheel_angle_report, 'wheel_angle_report_data'):
-                                    angle_data = msg.wheel_angle_report.wheel_angle_report_data
-                                    if hasattr(angle_data, 'front_left') and hasattr(angle_data, 'front_right') and \
-                                       hasattr(angle_data, 'rear_left') and hasattr(angle_data, 'rear_right'):
-                                        wheel_speeds = np.array([angle_data.front_left, angle_data.front_right,
-                                                               angle_data.rear_left, angle_data.rear_right])
-                                        print(f"Using wheel angle data: {wheel_speeds}")
+                            # If wheel_speeds is still None, try using wheel angle data as a last resort
+                            if wheel_speeds is None and wheel_angles is not None:
+                                wheel_speeds = np.zeros(4)  # Use zeros for speeds if we only have angles
+                                print("Warning: Using zeros for wheel speeds, only angle data available")
 
                             # If we still don't have wheel data, try generic approaches
                             if 'wheel_speeds' not in locals() or wheel_speeds is None:
@@ -539,7 +546,7 @@ def read_rosbag(data_path: str) -> Tuple[List[ImageData], List[ImuData], List[Wh
                         # Default placeholder
                         wheel_speeds = np.zeros(4)
 
-                    wheel_data.append(WheelEncoderData(ts, wheel_speeds))
+                    wheel_data.append(WheelEncoderData(ts, wheel_speeds, wheel_angles))
                 except Exception as e:
                     print(f"Error processing wheel encoder message: {e}")
 
@@ -597,7 +604,16 @@ def load_and_synchronize_data(data_path: str) -> Tuple[List[ImageData], List[Imu
     timestamps = np.linspace(0, 10, 101) # 10 seconds of data at 10 Hz
     images = [ImageData(ts, f"cam{i}", np.zeros((480, 640))) for ts in timestamps for i in range(4)] # 4 cameras
     imu_data = [ImuData(ts, np.random.randn(3)*0.01, np.random.randn(3)*0.1 + np.array([0,0,9.81])) for ts in np.linspace(0, 10, 1001)] # 100 Hz IMU
-    wheel_data = [WheelEncoderData(ts, np.random.rand(4)*5 + 10) for ts in np.linspace(0, 10, 501)] # 50 Hz Wheel Encoders
+
+    # Generate dummy wheel data with wheel angles
+    wheel_timestamps = np.linspace(0, 10, 501) # 50 Hz Wheel Encoders
+    wheel_data = []
+    for ts in wheel_timestamps:
+        # Generate random wheel speeds
+        wheel_speeds = np.random.rand(4)*5 + 10
+        # Generate wheel angles: front wheels have small random angles, rear wheels are ~0
+        wheel_angles = np.array([np.sin(ts*0.5)*0.1, np.sin(ts*0.5)*0.1, 0.0, 0.0])
+        wheel_data.append(WheelEncoderData(ts, wheel_speeds, wheel_angles))
 
     # Basic synchronization
     return synchronize_sensor_data(images, imu_data, wheel_data)
