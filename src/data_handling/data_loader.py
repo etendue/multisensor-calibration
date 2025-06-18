@@ -581,6 +581,31 @@ def load_and_synchronize_data(data_path: str, load_images: bool = True) -> Tuple
     """
     print(f"Loading and synchronizing data from: {data_path}")
 
+    # Check if dummy data should be used
+    if not data_path or data_path == "dummy":
+        print("Using dummy data for development/testing.")
+        # Dummy data for structure illustration
+        # Use a fixed seed for np.random to ensure consistent dummy data
+        np.random.seed(0)
+        timestamps = np.linspace(0, 10, 101)  # 10 seconds of data at 10 Hz
+        images = []
+        if load_images:
+            images = [ImageData(ts, f"cam{i}", np.zeros((480, 640, 3), dtype=np.uint8)) for ts in timestamps for i in range(4)]  # 4 cameras
+        imu_data = [ImuData(ts, np.random.randn(3) * 0.01, np.random.randn(3) * 0.1 + np.array([0, 0, 9.81])) for ts in np.linspace(0, 10, 1001)]  # 100 Hz IMU
+
+        # Generate dummy wheel data with wheel angles
+        wheel_timestamps = np.linspace(0, 10, 501)  # 50 Hz Wheel Encoders
+        wheel_data = []
+        for ts in wheel_timestamps:
+            # Generate random wheel speeds
+            wheel_speeds = np.random.rand(4) * 5 + 10
+            # Generate wheel angles: front wheels have small random angles, rear wheels are ~0
+            wheel_angles = np.array([np.sin(ts * 0.5) * 0.1, np.sin(ts * 0.5) * 0.1, 0.0, 0.0])
+            wheel_data.append(WheelEncoderData(ts, wheel_speeds, wheel_angles))
+
+        # Basic synchronization
+        return synchronize_sensor_data(images, imu_data, wheel_data)
+
     # Check if the path is a file or directory
     path = Path(data_path)
 
@@ -608,21 +633,25 @@ def load_and_synchronize_data(data_path: str, load_images: bool = True) -> Tuple
         else:
             print("rosbags package not available. Falling back to dummy data.")
 
-    # Fallback to dummy data for development/testing
-    print("Using dummy data for development/testing.")
+    # Fallback to dummy data for development/testing if other methods fail
+    print("No valid data source found or error during loading. Using dummy data as a fallback.")
     # Dummy data for structure illustration
-    timestamps = np.linspace(0, 10, 101) # 10 seconds of data at 10 Hz
-    images = [ImageData(ts, f"cam{i}", np.zeros((480, 640))) for ts in timestamps for i in range(4)] # 4 cameras
-    imu_data = [ImuData(ts, np.random.randn(3)*0.01, np.random.randn(3)*0.1 + np.array([0,0,9.81])) for ts in np.linspace(0, 10, 1001)] # 100 Hz IMU
+    # Use a fixed seed for np.random to ensure consistent dummy data
+    np.random.seed(0)
+    timestamps = np.linspace(0, 10, 101)  # 10 seconds of data at 10 Hz
+    images = []
+    if load_images:
+        images = [ImageData(ts, f"cam{i}", np.zeros((480, 640, 3), dtype=np.uint8)) for ts in timestamps for i in range(4)]  # 4 cameras
+    imu_data = [ImuData(ts, np.random.randn(3) * 0.01, np.random.randn(3) * 0.1 + np.array([0, 0, 9.81])) for ts in np.linspace(0, 10, 1001)]  # 100 Hz IMU
 
     # Generate dummy wheel data with wheel angles
-    wheel_timestamps = np.linspace(0, 10, 501) # 50 Hz Wheel Encoders
+    wheel_timestamps = np.linspace(0, 10, 501)  # 50 Hz Wheel Encoders
     wheel_data = []
     for ts in wheel_timestamps:
         # Generate random wheel speeds
-        wheel_speeds = np.random.rand(4)*5 + 10
+        wheel_speeds = np.random.rand(4) * 5 + 10
         # Generate wheel angles: front wheels have small random angles, rear wheels are ~0
-        wheel_angles = np.array([np.sin(ts*0.5)*0.1, np.sin(ts*0.5)*0.1, 0.0, 0.0])
+        wheel_angles = np.array([np.sin(ts * 0.5) * 0.1, np.sin(ts * 0.5) * 0.1, 0.0, 0.0])
         wheel_data.append(WheelEncoderData(ts, wheel_speeds, wheel_angles))
 
     # Basic synchronization

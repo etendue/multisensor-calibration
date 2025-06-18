@@ -22,7 +22,7 @@ from data_structures import VehiclePose
 def main():
     """Main function to test trajectory estimation."""
     # Path to the bag file
-    bag_path = '/home/etendue/repo/cal/data/PL4106_event_dfdi_console_manual_event_20221225-055706_0.bag'
+    bag_path = 'dummy'
 
     print(f"Loading data from {bag_path}...")
 
